@@ -1,6 +1,0 @@
-train: /home/tm/Documents/universita/tirocinio_hipert/research/utils/training/tmp/tmp_train.txt
-val: /home/tm/Documents/universita/tirocinio_hipert/research/datasets/f1tenth.v2i.yolov11/valid/images
-test: /home/tm/Documents/universita/tirocinio_hipert/research/datasets/f1tenth.v2i.yolov11/test/images
-
-names:
-  0: racecar
