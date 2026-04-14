@@ -1,0 +1,6 @@
+pandas
+matplotlib
+pathlib
+pyyaml
+opencv-python
+ultralytics

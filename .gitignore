@@ -1,0 +1,29 @@
+# --- Virtual Environments ---
+# Specifically targeting your project's venv
+.venv_utils/
+
+# General venv patterns (just in case)
+venv/
+.venv/
+env/
+ENV/
+
+# --- Project Specific Temporaries ---
+# Your 'tmp' folder containing temporary configs and text files
+training/tmp/
+
+# --- Python Bytecode & Cache ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Machine Learning & Outputs ---
+# Local results or experiment logs that might be large/unique to your run
+# If you want to keep the .png files in Git, comment these out
+*.png
+training/training_experiments/run_*
+
+# --- OS Specific ---
+.DS_Store
+.directory
+Thumbs.db

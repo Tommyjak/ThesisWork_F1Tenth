@@ -1,0 +1,38 @@
+# config.yaml
+
+# dataset(s) path definitions
+datasets:
+  # train -> 1998 images labelled (all positive)
+  # val -> 190 images labelled (all positive)
+  # test -> 95 images labelled (all positive)
+  dataset1:
+    name: "generic_F1Tenth_dataset"
+    train_images: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/f1tenth.v2i.yolov11/train/images"
+    val_images: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/f1tenth.v2i.yolov11/valid/images"
+    test_images: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/f1tenth.v2i.yolov11/test/images"
+
+  #train -> 514 images labelled (60 positive, 454 negative)
+  dataset2:
+    name: "huawei_uci2020_dataset"
+    train_images: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/huawei-uci2020-ds/images"
+
+# training parameters for experiments
+experiments:
+  # this istance of the experiment uses all the samples from the two datasets
+  - name: "complete"
+    pct_ds1: 1.0
+    pct_ds2_pos: 1.0
+    pct_ds2_neg: 1.0
+  
+  # this istance of the experiment uses all the samples from dataset1 and dataset2 and only a selectable 
+  # percentage of the negative samples from dataset2
+  - name: "low_bg"
+    pct_ds1: 1.0
+    pct_ds2_pos: 1.0
+    pct_ds2_neg: 0.1 # modify this parameter to change the percentage of negative (no detections) samples from dataset2
+
+  # this istance of the experiment uses all the samples from dataset1 and only the positive samples from dataset2
+  - name: "no_bg"
+    pct_ds1: 1.0
+    pct_ds2_pos: 1.0
+    pct_ds2_neg: 0.0
