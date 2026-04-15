@@ -10,7 +10,7 @@ ENV/
 
 # --- Project Specific Temporaries ---
 # Your 'tmp' folder containing temporary configs and text files
-training_supervisioned/tmp/
+training_supervised/tmp/
 
 # --- Python Bytecode & Cache ---
 __pycache__/
@@ -21,7 +21,7 @@ __pycache__/
 # Local results or experiment logs that might be large/unique to your run
 # If you want to keep the .png files in Git, comment these out
 *.png
-training_supervisioned/training_experiments/run_*
+training_supervised/training_experiments/run_*
 
 # --- OS Specific ---
 .DS_Store
