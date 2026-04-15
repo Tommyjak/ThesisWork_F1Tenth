@@ -15,14 +15,6 @@ The project, as of today, 15/04/2026, is organized as follows:
 │   ├── config.yaml
 │   ├── inference.py
 │   ├── run.sh
-│   ├── tmp/
-│   │   ├── tmp_config.yaml
-│   │   └── tmp_train.txt
-│   ├── training_experiments/
-│   │   ├── comparative_analysis.png
-│   │   ├── run_complete/
-│   │   ├── run_low_bg/
-│   │   └── run_no_bg/
 │   └── train.py
 ├── training_unsupervised/
 └── vid2img/
