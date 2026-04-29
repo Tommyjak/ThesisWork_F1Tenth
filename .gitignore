@@ -22,6 +22,7 @@ __pycache__/
 # If you want to keep the .png files in Git, comment these out
 *.png
 training_supervised/training_experiments/run_*
+training_supervised/best_weights/
 
 # --- OS Specific ---
 .DS_Store
