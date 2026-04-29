@@ -3,7 +3,7 @@
 This repository contains the core of the thesis work for the degree in Artificial Intelligence and Engineering (AIE) at the University of Modena and Reggio Emilia (Unimore). The project focuses on unsupervised learning techniques for obstacle detection in autonomous driving, specifically using the F1Tenth - RoboRacer platform.
 
 ## Project Structure
-The project, as of today, 15/04/2026, is organized as follows:
+The project, as of today, 29/04/2026, is organized as follows:
 ```text
 .
 ├── README.md
