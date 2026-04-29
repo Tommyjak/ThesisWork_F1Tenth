@@ -2,43 +2,43 @@ import cv2
 import os
 import sys
 
-# Function to extract frames from a video until reaching the desired frame count
 def extract_frames(video_file):
     cap = cv2.VideoCapture(video_file)
-    
-    frame_rate = 5  # Desired FPS (frames per second)
-    frame_count = 0
-    
-    # Get the video file's name without extension
+
+    if not cap.isOpened():
+        print(f"Error: cannot open video file '{video_file}'")
+        sys.exit(1)
+
+    frame_rate = 10  # Desired FPS to extract
+    native_fps = round(cap.get(cv2.CAP_PROP_FPS))  # Round to nearest int (e.g. 29.97 -> 30)
+    frame_interval = max(1, native_fps // frame_rate)  # Integer division, safe floor
+
     video_name = os.path.splitext(os.path.basename(video_file))[0]
-    
-    # Create an output folder with a name corresponding to the video
     output_directory = f"../../datasets/{video_name}/images/"
     os.makedirs(output_directory, exist_ok=True)
-    
+
+    frame_count = 0
+    saved_count = 0
+
     while True:
         ret, frame = cap.read()
-        
         if not ret:
             break
-        
-        frame_count += 1
-        
-        # Only extract frames at the desired frame rate
-        if frame_count % int(cap.get(5) / frame_rate) == 0:
-            output_file = f"{output_directory}/frame_{frame_count}.jpg"
+
+        if frame_count % frame_interval == 0:
+            output_file = f"{output_directory}/frame_{frame_count:06d}.jpg"
             cv2.imwrite(output_file, frame)
-            print(f"Frame {frame_count} has been extracted and saved as {output_file}")
-    
+            saved_count += 1
+            print(f"Saved frame {frame_count} -> {output_file}")
+
+        frame_count += 1
+
     cap.release()
-    cv2.destroyAllWindows()
+    print(f"\nDone. {saved_count} frames saved from {frame_count} total (native: {native_fps} FPS, extracted: ~{frame_rate} FPS)")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python vid2img.py <path_to_video_file>")
         sys.exit(1)
 
-    video_file = sys.argv[1]  # Get the video file path from command line arguments
-
-    
-    extract_frames(video_file)
+    extract_frames(sys.argv[1])
