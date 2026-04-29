@@ -2,7 +2,7 @@
 
 set -e
 
-if [ "$#" -eq 0 ]; then
+if [ "$#" -eq 1 ]; then
     BASE_DIR="$1"
 else
     echo "Default path: /home/tm/Documents/universita/tirocinio_hipert/research/datasets/squeaky_17-04-26"
