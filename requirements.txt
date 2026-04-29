@@ -4,3 +4,5 @@ pathlib
 pyyaml
 opencv-python
 ultralytics
+shutils
+
