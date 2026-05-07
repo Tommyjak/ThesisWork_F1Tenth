@@ -1,7 +1,7 @@
 import random
 from pathlib import Path
 import yaml
-import ds_yaml_parser as dyp
+from . import ds_yaml_parser as dyp
 import shutil
 
 # TODO: avoid hardcoding this path, maybe pass it as an argument or read from a config file

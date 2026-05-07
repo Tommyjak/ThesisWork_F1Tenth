@@ -1,7 +1,7 @@
 import yaml
 from pathlib import Path
-import ds_yaml_parser as dyp
-import exp_yaml_parser as eyp
+from . import ds_yaml_parser as dyp
+from . import exp_yaml_parser as eyp
 import shutil
 
 
