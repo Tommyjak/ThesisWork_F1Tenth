@@ -3,26 +3,35 @@
 This repository contains the core of the thesis work for the degree in Artificial Intelligence and Engineering (AIE) at the University of Modena and Reggio Emilia (Unimore). The project focuses on unsupervised learning techniques for obstacle detection in autonomous driving, specifically using the F1Tenth - RoboRacer platform.
 
 ## Project Structure
-The project, as of today, 29/04/2026, is organized as follows:
+The project, as of today, 07/05/2026, is organized as follows:
 ```text
 .
-├── README.md
-├── requirements.txt
-├── training_supervised
-│   ├── analyze_results.py
-│   ├── background_comparison_dashboard.png
-│   ├── build_ds.py
-│   ├── build_from_bag.py
-│   ├── build_from_bag.sh
-│   ├── config.yaml
-│   ├── inference.py  
-│   ├── run.sh
-│   └── train.py
-├── training_unsupervised/
-└── vid2img/
-    ├── run_multiple.sh
-    ├── run.sh
-    └── vid2img.py
+.
+├── dataset_manipulation
+│   ├── create_refs_from_ds.py
+│   ├── datasets.yaml
+│   ├── ds_yaml_parser.py
+│   ├── experiments.yaml
+│   ├── exp_yaml_parser.py
+│   ├── inference.py
+│   ├── __init__.py
+│   ├── merge_datasets.py
+│   ├── train.py
+│   └── unify_bags_data.py
+├── ds_references
+│   ├── dataset_1
+│   ├── ...
+│   └── dataset_n
+├── merged_datasets
+│   ├── exp1_merged
+│   ├── ...
+│   └── exp_n_merged
+├── models
+    ├── exp1_merged
+    ├── ...
+    └── exp_n_merged
+
+
     
 ```
 
@@ -32,12 +41,21 @@ The project, as of today, 29/04/2026, is organized as follows:
   * `run.sh`: Shell script to execute the video to image conversion process 
   * `run_multiple.sh`: Shell script to execute the video to image conversion process for multiple videos
 - `training_supervised/`: Contains scripts and resources for supervised training of the obstacle detection
-  * `build_ds.py`: Script for building a dataset from multiple ones, being able to select percentages of "negative" samples (i.e., with no detections of obstacles)
-  * `build_from_bag.py`: Script for building a dataset from multiple directories containing files extracted from ROS bags
-  * `build_from_bag.sh`: Shell script to execute the dataset building process from ROS
-  * `train.py`: Main training script for supervised learning
-  * `inference.py`: Script for running inference using the trained model
-  * `analyze_results.py`: Script for analyzing the results of different runs of training and generating visual comparative analysis
-  * `config.yaml`: Configuration file for training parameters and datasets paths
-  * `run.sh`: Shell script to execute the training process
-- `training_unsupervised/`: Placeholder for future unsupervised training scripts and resources
+  * `create_refs_from_ds.py`: Generates .txt split files and `config.yaml` references for each dataset under `ds_references/`
+  * `datasets.yaml`: Declares the available datasets with their paths and metadata
+  * `ds_yaml_parser.py`: Utility functions to load and query dataset entries from `datasets.yaml`
+  * `experiments.yaml`: Declares training experiments, each defined by a dataset combination and split parameters
+  * `exp_yaml_parser.py`: Utility functions to load and query experiment entries from `experiments.yaml`
+  * `inference.py`: Opens the webcam and runs live opponent detection using a trained YOLO model
+  * `merge_datasets.py`: Combines dataset references into per-experiment merged `config.yaml` files under `merged_datasets/`
+  * `train.py`: Orchestrates the full training pipeline across all defined experiments
+  * `unify_bags_data.py`: Merges multiple ROS bag extraction folders into a single unified `complete_labels/` dataset directory
+- `training_unsupervised/`: Placeholder for possible future unsupervised training scripts and resources
+
+## Usage
+When using the project you have to browse to `training_supervised/dataset_manipulation/` folder
+Then:
+  1. If you want to add a new dataset, just add a new dataset, with all the specifics as the others in the `datasets.yaml` file. Make sure that the datasets are in the same parent folder even outside the project, called `datasets/`
+  2. If you want to add a new experiment (specifying which and how many datasets to merge) you have to add it to `experiments.py` file. It's necessary to add an experiment to run the training with success.
+  3. If you want to run the training, just run the command from terminal `python3 train.py`
+  4. If you want to run the inference, just run the command from terminal `python3 inference.py`
