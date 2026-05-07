@@ -6,7 +6,6 @@ This repository contains the core of the thesis work for the degree in Artificia
 The project, as of today, 07/05/2026, is organized as follows:
 ```text
 .
-.
 ├── dataset_manipulation
 │   ├── create_refs_from_ds.py
 │   ├── datasets.yaml
@@ -30,8 +29,6 @@ The project, as of today, 07/05/2026, is organized as follows:
     ├── exp1_merged
     ├── ...
     └── exp_n_merged
-
-
     
 ```
 
