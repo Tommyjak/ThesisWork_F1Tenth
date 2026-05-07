@@ -21,8 +21,9 @@ __pycache__/
 # Local results or experiment logs that might be large/unique to your run
 # If you want to keep the .png files in Git, comment these out
 *.png
-training_supervised/training_experiments/run_*
-training_supervised/best_weights/
+*.pt
+training_supervised/merged_datasets/*
+training_supervised/ds_references/*
 
 # --- OS Specific ---
 .DS_Store

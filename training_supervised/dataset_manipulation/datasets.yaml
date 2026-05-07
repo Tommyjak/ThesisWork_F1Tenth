@@ -1,0 +1,23 @@
+# datasets.yaml
+
+datasets:
+  dataset1:
+    name: "f1tenth.v2i.yolov11"
+    description: "train -> 1998 images labelled (all positive), val -> 190 images labelled (all positive), test -> 95 images labelled (all positive)"
+    mixed: 0
+    already_split: 1
+    base_path: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/f1tenth.v2i.yolov11"
+
+  dataset2:
+    name: "huawei-uci2020-dataset"
+    description: "train -> 514 images labelled (60 positive, 454 negative)"
+    mixed: 1
+    already_split: 0
+    base_path: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/huawei-uci2020-dataset"
+
+  dataset3:
+    name: "squeaky_17-04-26"
+    description: "train -> 850 images (all positive)"
+    mixed: 0
+    already_split: 0
+    base_path: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/squeaky_17-04-26/complete_labels"
