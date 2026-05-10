@@ -25,7 +25,7 @@ def main():
         annotated_frame = results[0].plot()
 
         cv2.imshow("F1Tenth - Opponent Detection", annotated_frame)
-
+    
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
