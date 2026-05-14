@@ -2,33 +2,13 @@
 
 experiments:
   exp1:
-    name: "baseline_f1tenth"
-    description: "Single dataset baseline"
-    datasets:
-      - "f1tenth.v2i.yolov11"
-    train_pct: 0.7
-    val_pct: 0.15
-    test_pct: 0.15
-    seed: 42
-
-  exp2:
-    name: "merged_f1tenth_squeaky"
-    description: "Merge two positive-only datasets"
-    datasets:
-      - "f1tenth.v2i.yolov11"
-      - "squeaky_17-04-26"
-    train_pct: 0.7
-    val_pct: 0.15
-    test_pct: 0.15
-    seed: 42
-
-  exp3:
-    name: "full_merge_with_mixed"
-    description: "All datasets including the mixed one"
+    name: "full_with_negatives"
+    description: "all datasets including full negative"
     datasets:
       - "f1tenth.v2i.yolov11"
       - "huawei-uci2020-dataset"
-      - "squeaky_17-04-26"
+      - "squeaky_17-04-26_complete_labels"
+      - "miscellaneous_negatives"
     train_pct: 0.7
     val_pct: 0.15
     test_pct: 0.15

@@ -47,7 +47,14 @@ def get_ds_base_paths():
     datasets = load_datasets_yaml(DS_YAML_PATH)
     return [ds['base_path'] for ds in datasets]
 
+#def extract_name_from_path(path):
+#    path = Path(path)
+#    parts = path.parts
+#    return parts[parts.index("datasets") + 1]
+
 def extract_name_from_path(path):
     path = Path(path)
     parts = path.parts
-    return parts[parts.index("datasets") + 1]
+    idx = parts.index("datasets")
+    # join everything after datasets/ using underscores
+    return "_".join(parts[idx + 1:])

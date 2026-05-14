@@ -16,8 +16,15 @@ datasets:
     base_path: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/huawei-uci2020-dataset"
 
   dataset3:
-    name: "squeaky_17-04-26"
-    description: "train -> 850 images (all positive)"
+    name: "squeaky_17-04-26_complete_labels"
+    description: "train -> 850 images labelled (all positives)"
     mixed: 0
     already_split: 0
     base_path: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/squeaky_17-04-26/complete_labels"
+
+  dataset4:
+    name: "miscellaneous_negatives"
+    description: "train -> 500 images labelled (all negatives)"
+    mixed: 0
+    already_split: 0
+    base_path: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/miscellaneous_negatives"
