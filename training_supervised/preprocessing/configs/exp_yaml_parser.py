@@ -1,26 +1,23 @@
 import yaml
 from pathlib import Path
 
-EXP_YAML_PATH = Path("./experiments.yaml")
+EXP_YAML_PATH = Path(__file__).resolve().parent / "experiments.yaml"
 
 def load_experiments_yaml(experiments_yaml_path=EXP_YAML_PATH):
-    experiments = []
     with open(experiments_yaml_path, 'r') as f:
         experiments_yaml = yaml.safe_load(f)["experiments"]
-        experiments_objs = list(experiments_yaml.items())
-    
-    for _, exp in experiments_objs:
-        experiments.append(exp)
-
-    return experiments
+    return list(experiments_yaml.values())
 
 def get_exp_infos(experiments_yaml_path=EXP_YAML_PATH):
     experiments = load_experiments_yaml(experiments_yaml_path)
     return [
         {
             'name': exp['name'],
-            'description': exp['description'],
             'datasets': exp['datasets'],
+            'ratios': {
+                name: (cfg.get('pos_ratio', 1.0), cfg.get('neg_ratio', 1.0))
+                for name, cfg in exp['datasets'].items()
+            },
             'pcts': (exp['train_pct'], exp['val_pct'], exp['test_pct']),
             'seed': exp['seed'],
         }
@@ -31,17 +28,23 @@ def get_exp_names():
     experiments = load_experiments_yaml(EXP_YAML_PATH)
     return [exp['name'] for exp in experiments]
 
-def get_exp_descriptions():
-    experiments = load_experiments_yaml(EXP_YAML_PATH)
-    return [exp['description'] for exp in experiments]
-
 def get_exp_datasets():
     experiments = load_experiments_yaml(EXP_YAML_PATH)
     return [exp['datasets'] for exp in experiments]
 
+def get_ratios():
+    experiments = load_experiments_yaml(EXP_YAML_PATH)
+    return [
+        [
+            (cfg.get('pos_ratio', 1.0), cfg.get('neg_ratio', 1.0))
+            for cfg in exp['datasets'].values()
+        ]
+        for exp in experiments
+    ]
+
 def get_exp_pcts():
     experiments = load_experiments_yaml(EXP_YAML_PATH)
-    return [exp['train_pct'] for exp in experiments], [exp['val_pct'] for exp in experiments], [exp['test_pct'] for exp in experiments]
+    return ([exp['train_pct'] for exp in experiments], [exp['val_pct'] for exp in experiments], [exp['test_pct'] for exp in experiments])
 
 def get_exp_seeds():
     experiments = load_experiments_yaml(EXP_YAML_PATH)

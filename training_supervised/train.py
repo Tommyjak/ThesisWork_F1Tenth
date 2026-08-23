@@ -5,14 +5,12 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent))
 
-import dataset_manipulation.merge_datasets as md
-import dataset_manipulation.ds_yaml_parser as dyp
-import dataset_manipulation.exp_yaml_parser as eyp
-import dataset_manipulation.create_refs_from_ds as crfd
+import preprocessing.configs.exp_yaml_parser as eyp
+from preprocessing.pipeline import run_preprocessing
 
-DS_REF_DIR = Path("../ds_references")
-MRGD_DS_REF_DIR = Path("../merged_datasets")
-MODEL_PATH = Path("../models/yolo26n.pt")
+BASE_DIR = Path(__file__).resolve().parent
+REF_DIR = BASE_DIR / "references"
+MODEL_PATH = BASE_DIR / "models/yolo26n.pt"
 
 def train_model(config):
     print("Model loading...")
@@ -69,45 +67,18 @@ def train_model(config):
     print("Training completed.")
     return results
 
-def get_configs_for_training():
-    configs = []
-    for subfolder in sorted(MRGD_DS_REF_DIR.iterdir()):
-        if not subfolder.is_dir():
+def run_training_experiments():
+    for exp in REF_DIR.iterdir():
+        if not exp.is_dir():
             continue
-    
-        yaml_file = subfolder / "config.yaml"
-    
-        if not yaml_file.exists():
-            print(f"[WARNING] No config.yaml found in {subfolder.name}, skipping.")
-            continue
-    
-        configs.append(yaml_file)
 
-    return configs
-    
-def run_multiple_experiments():
-    crfd.create_refs_from_ds()
-    md.create_merged_dataset()
+        config = exp / "config.yaml"
 
-    configs = get_configs_for_training()
-    summary = []
-
-    for config in sorted(configs):
-        print(f"Training with config: {config}...")
-        results = train_model(Path(config))
-        summary.append({
-            'experiment': config.parent.name,
-            'mAP50': results.results_dict['metrics/mAP50(B)'],
-            'save_dir': str(results.save_dir)
-        })
-
-    print("\n=== Experiment Summary ===")
-    for s in summary:
-        print(f"{s['experiment']}: mAP50={s['mAP50']:.4f} | saved at {s['save_dir']}")
-
+        train_model(config)
 
 def main():
-    run_multiple_experiments()
+    run_preprocessing(REF_DIR)
+    run_training_experiments()
 
 if __name__ == "__main__":
     main()

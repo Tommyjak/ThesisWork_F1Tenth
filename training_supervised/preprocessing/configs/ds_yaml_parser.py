@@ -1,7 +1,7 @@
 import yaml
 from pathlib import Path
 
-DS_YAML_PATH = Path("./datasets.yaml")
+DS_YAML_PATH = Path(__file__).resolve().parent / "datasets.yaml"
 
 def load_datasets_yaml(datasets_yaml_path):
     datasets = []
@@ -19,10 +19,8 @@ def get_ds_infos(datasets_yaml_path=DS_YAML_PATH):
     return [
         {
             'name': ds['name'],
-            'description': ds['description'],
-            'mixed': ds['mixed'] == 1,
-            'already_split': ds['already_split'] == 1,
-            'base_path': Path(ds['base_path']),
+            'root': Path(ds['root']),
+            'type': ds['type'],
         }
         for ds in datasets
     ]
@@ -31,26 +29,13 @@ def get_ds_names():
     datasets = load_datasets_yaml(DS_YAML_PATH)
     return [ds['name'] for ds in datasets]
 
-def get_ds_descriptions():
+def get_ds_roots():
     datasets = load_datasets_yaml(DS_YAML_PATH)
-    return [ds['description'] for ds in datasets]
+    return [ds['root'] for ds in datasets]
 
-def get_ds_mixed_bool():
+def get_ds_types():
     datasets = load_datasets_yaml(DS_YAML_PATH)
-    return [ds['mixed'] == 1 for ds in datasets]
-
-def get_already_split_bool():
-    datasets = load_datasets_yaml(DS_YAML_PATH)
-    return [ds['already_split'] == 1 for ds in datasets]
-
-def get_ds_base_paths():
-    datasets = load_datasets_yaml(DS_YAML_PATH)
-    return [ds['base_path'] for ds in datasets]
-
-#def extract_name_from_path(path):
-#    path = Path(path)
-#    parts = path.parts
-#    return parts[parts.index("datasets") + 1]
+    return [ds['type'] for ds in datasets]
 
 def extract_name_from_path(path):
     path = Path(path)

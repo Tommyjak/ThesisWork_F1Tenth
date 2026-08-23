@@ -1,0 +1,22 @@
+# datasets.yaml
+
+datasets:
+  dataset1:
+    name: "f1tenth.v2i.yolov11"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/f1tenth.v2i.yolov11"
+    type: "subfolders"
+
+  dataset2:
+    name: "huawei-uci2020-dataset"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/huawei-uci2020-dataset"
+    type: "standard"
+
+  dataset3:
+    name: "squeaky_17-04-26"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/squeaky_17-04-26"
+    type: "subfolders"
+
+  dataset4:
+    name: "objects_negatives_15-05-26"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/objects_negatives_15-05-26"
+    type: "subfolders"

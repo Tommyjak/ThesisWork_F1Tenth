@@ -1,0 +1,50 @@
+# voglio che prenda i sample divisi in split per dataset e, in base a come è creato l'esperimento, li vada a scrivere nel seguente modo:
+# out_dir/
+#   exp_1/ or exp_name/
+#     train.txt; val.txt; test.txt; config.yaml
+#   exp_2/ or exp_name/
+#     train.txt; val.txt; test.txt; config.yaml
+
+from pathlib import Path
+import yaml
+
+import preprocessing.configs.exp_yaml_parser as eyp
+
+def write_experiments(train_multi, val_multi, test_multi, out_dir):
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    for i, (train, val, test) in enumerate(zip(train_multi, val_multi, test_multi)):
+        exp_name = eyp.get_exp_names()[i]
+        exp_dir = out_dir / exp_name
+        exp_dir.mkdir(parents=True, exist_ok=True)
+
+        train_file = exp_dir / "train.txt"
+        val_file = exp_dir / "val.txt"
+        test_file = exp_dir / "test.txt"
+        config_file = exp_dir / "config.yaml"
+
+        files = (train_file, val_file, test_file)
+
+        for file in files:
+            file.touch(exist_ok=True)
+            with open(file, 'w') as f:
+                if file == train_file:
+                    for sample in train:
+                        f.write(str(sample.img_path) + '\n')
+                elif file == val_file:
+                    for sample in val:
+                        f.write(str(sample.img_path) + '\n')
+                elif file == test_file:
+                    for sample in test:
+                        f.write(str(sample.img_path) + '\n')
+
+        config = {
+            'train': str(train_file),
+            'val': str(val_file),
+            'test': str(test_file),
+            'names': {0: 'racecar'}
+        }
+
+        with open(config_file, 'w') as f:
+            yaml.dump(config, f, sort_keys=False)

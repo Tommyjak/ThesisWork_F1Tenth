@@ -9,22 +9,22 @@ env/
 ENV/
 
 # --- Project Specific Temporaries ---
-# Your 'tmp' folder containing temporary configs and text files
-training_supervised/tmp/
+runs/*
+
 
 # --- Python Bytecode & Cache ---
 __pycache__/
 *.py[cod]
 *$py.class
+.claude/
+__init__.py
 
 # --- Machine Learning & Outputs ---
 # Local results or experiment logs that might be large/unique to your run
 # If you want to keep the .png files in Git, comment these out
 *.png
 *.pt
-training_supervised/merged_datasets/*
-training_supervised/ds_references/*
-training_supervised/dataset_manipulation/runs/*
+training_supervised/references/*
 
 # --- OS Specific ---
 .DS_Store
