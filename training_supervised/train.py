@@ -55,7 +55,7 @@ def train_model(config):
         conf = 0.25,            # confidence threshold during validation
 
         # --- hardware ---
-        device = 'cpu',
+        device = 0,
         workers = 8,
 
         # --- reproducibility & logging ---
