@@ -25,6 +25,7 @@ __init__.py
 *.png
 *.pt
 training_supervised/references/*
+training_supervised/results/*
 
 # --- OS Specific ---
 .DS_Store

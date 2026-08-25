@@ -18,7 +18,7 @@ def get_exp_infos(experiments_yaml_path=EXP_YAML_PATH):
                 name: (cfg.get('pos_ratio', 1.0), cfg.get('neg_ratio', 1.0))
                 for name, cfg in exp['datasets'].items()
             },
-            'pcts': (exp['train_pct'], exp['val_pct'], exp['test_pct']),
+            'val_pct': exp['val_pct'],
             'seed': exp['seed'],
         }
         for exp in experiments
@@ -42,9 +42,9 @@ def get_ratios():
         for exp in experiments
     ]
 
-def get_exp_pcts():
+def get_val_pcts():
     experiments = load_experiments_yaml(EXP_YAML_PATH)
-    return ([exp['train_pct'] for exp in experiments], [exp['val_pct'] for exp in experiments], [exp['test_pct'] for exp in experiments])
+    return [exp['val_pct'] for exp in experiments]
 
 def get_exp_seeds():
     experiments = load_experiments_yaml(EXP_YAML_PATH)

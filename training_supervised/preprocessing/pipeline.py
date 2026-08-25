@@ -6,9 +6,9 @@ from preprocessing.export import write_experiments
 def run_preprocessing(out_dir):
     datasets = load_datasets()
 
-    train_multi, val_multi, test_multi = [], [], []
+    train_multi, val_multi = [], []
     
-    train_multi, val_multi, test_multi = build_experiments(datasets)
+    train_multi, val_multi = build_experiments(datasets)
 
-    write_experiments(train_multi, val_multi, test_multi, out_dir)
+    write_experiments(train_multi, val_multi, out_dir)
     

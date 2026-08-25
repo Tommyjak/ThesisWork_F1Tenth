@@ -1,16 +1,13 @@
-import random
 from preprocessing.core.samples import Split
 
-def split_pool(samples, pcts, rng):
+def split_pool(samples, val_pct, rng):
     pool = list(samples)
     rng.shuffle(pool)
 
-    n_train = round(len(pool) * pcts[0])
-    n_val = round(len(pool) * pcts[1])
+    n_val = round(len(pool) * val_pct)
 
-    train = pool[: n_train]
-    val = pool[n_train : n_train +n_val]
-    test = pool[n_train + n_val :]
+    train = pool[n_val :]
+    val = pool[: n_val]
 
     for t in train:
         t.split = Split.TRAIN
@@ -18,7 +15,4 @@ def split_pool(samples, pcts, rng):
     for v in val:
         v.split = Split.VAL
 
-    for t in test:
-        t.split = Split.TEST
-
-    return train, val, test
+    return train, val

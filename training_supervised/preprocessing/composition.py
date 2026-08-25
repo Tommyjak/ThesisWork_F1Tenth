@@ -3,6 +3,8 @@ import random
 from preprocessing.splitting import split_pool
 import preprocessing.configs.exp_yaml_parser as eyp
 
+SPLIT_SEED = 1234
+
 def limit_samples(samples, fraction, rng):
     samples = list(samples)
     if fraction >= 1.0:
@@ -16,35 +18,42 @@ def build_experiments(datasets):
     exp_names = eyp.get_exp_names()
     exp_datasets = eyp.get_exp_datasets()
     exp_seeds = eyp.get_exp_seeds()
-    train_pcts, val_pcts, test_pcts = eyp.get_exp_pcts()
+    val_pcts = eyp.get_val_pcts()
 
-    train_multi, val_multi, test_multi = [], [], []
+    train_multi, val_multi = [], []
 
     for i, _ in enumerate(exp_names):
         rng = random.Random(exp_seeds[i])
-        pcts = (train_pcts[i], val_pcts[i], test_pcts[i])
+        val_pct = val_pcts[i]
         ds_requested = exp_datasets[i]
 
-        train, val, test = [], [], []
+        train, val = [], []
 
         for ds in datasets:
             if ds.name not in ds_requested:
                 continue
 
             cfg = ds_requested[ds.name]
-            for pool in (limit_samples(ds.get_positive_samples(), cfg.get('pos_ratio', 1.0), rng), limit_samples(ds.get_negative_samples(), cfg.get('neg_ratio', 1.0), rng)):
-                tr, va, te = split_pool(pool, pcts, rng)
+
+            pools = (
+                ("pos", ds.get_positive_samples(), cfg.get("pos_ratio", 1.0)),
+                ("neg", ds.get_negative_samples(), cfg.get("pos_ratio", 1.0)),
+            )
+
+            for kind, pool, ratio in pools:
+                sub_rng = random.Random(f"{exp_seeds[i]}:{ds.name}:{kind}:{ratio}")
+                pool = limit_samples(pool, ratio, sub_rng)
+
+                split_rng = random.Random(f"{SPLIT_SEED}:{ds.name}:{kind}:{val_pct}")
+                tr, va = split_pool(pool, val_pct, split_rng)
 
                 train += tr
                 val += va
-                test += te
 
         rng.shuffle(train)
         rng.shuffle(val)
-        rng.shuffle(test)
         
         train_multi.append(train)
         val_multi.append(val)
-        test_multi.append(test)
 
-    return train_multi, val_multi, test_multi
+    return train_multi, val_multi

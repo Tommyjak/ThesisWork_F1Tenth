@@ -7,24 +7,25 @@
 
 from pathlib import Path
 import yaml
+import shutil
 
 import preprocessing.configs.exp_yaml_parser as eyp
 
-def write_experiments(train_multi, val_multi, test_multi, out_dir):
+def write_experiments(train_multi, val_multi, out_dir):
     out_dir = Path(out_dir)
+    shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    for i, (train, val, test) in enumerate(zip(train_multi, val_multi, test_multi)):
+    for i, (train, val) in enumerate(zip(train_multi, val_multi)):
         exp_name = eyp.get_exp_names()[i]
         exp_dir = out_dir / exp_name
         exp_dir.mkdir(parents=True, exist_ok=True)
 
         train_file = exp_dir / "train.txt"
         val_file = exp_dir / "val.txt"
-        test_file = exp_dir / "test.txt"
         config_file = exp_dir / "config.yaml"
 
-        files = (train_file, val_file, test_file)
+        files = (train_file, val_file)
 
         for file in files:
             file.touch(exist_ok=True)
@@ -35,14 +36,10 @@ def write_experiments(train_multi, val_multi, test_multi, out_dir):
                 elif file == val_file:
                     for sample in val:
                         f.write(str(sample.img_path) + '\n')
-                elif file == test_file:
-                    for sample in test:
-                        f.write(str(sample.img_path) + '\n')
 
         config = {
             'train': str(train_file),
             'val': str(val_file),
-            'test': str(test_file),
             'names': {0: 'racecar'}
         }
 

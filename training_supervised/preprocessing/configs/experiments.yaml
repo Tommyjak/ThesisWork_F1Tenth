@@ -8,7 +8,5 @@ experiments:
       huawei-uci2020-dataset: {pos_ratio: 1.0, neg_ratio: 1.0}
       squeaky_17-04-26: {pos_ratio: 1.0, neg_ratio: 1.0}
       objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 1.0}
-    train_pct: 0.7
     val_pct: 0.15
-    test_pct: 0.15
     seed: 42
