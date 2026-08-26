@@ -1,9 +1,9 @@
 from pathlib import Path
 
 import preprocessing.configs.ds_yaml_parser as dyp
-from preprocessing.core.dataset import Dataset
-from preprocessing.loaders.standard_loader import StandardLoader
-from preprocessing.loaders.subfolders_loader import SubfoldersLoader
+from core.dataset import Dataset
+from core.loaders.standard_loader import StandardLoader
+from core.loaders.subfolders_loader import SubfoldersLoader
 
 def load_datasets():
     datasets = []

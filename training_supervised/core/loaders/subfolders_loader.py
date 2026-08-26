@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from preprocessing.loaders.base import Loader
-from preprocessing.core.samples import ImageSample, LblStatus
+from core.loaders.base import Loader
+from core.samples import ImageSample, LblStatus
 
 class SubfoldersLoader(Loader):
     def __init__(self, root: Path):

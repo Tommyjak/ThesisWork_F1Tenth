@@ -1,0 +1,14 @@
+# benchmarks.yaml
+
+benchmarks:
+  benchmark1:
+    name: "squeaky_17-04-26"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/squeaky_17-04-26"
+    type: "subfolders"
+    enabled: true
+
+  benchmark2:
+    name: "giusto_per"
+    root: "/giusto/per/mettere/qualcosa/tanto/e/disabled/"
+    type: "standard"
+    enabled: false

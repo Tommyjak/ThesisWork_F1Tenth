@@ -37,7 +37,7 @@ def build_experiments(datasets):
 
             pools = (
                 ("pos", ds.get_positive_samples(), cfg.get("pos_ratio", 1.0)),
-                ("neg", ds.get_negative_samples(), cfg.get("pos_ratio", 1.0)),
+                ("neg", ds.get_negative_samples(), cfg.get("neg_ratio", 1.0)),
             )
 
             for kind, pool, ratio in pools:

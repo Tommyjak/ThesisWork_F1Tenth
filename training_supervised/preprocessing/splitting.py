@@ -1,4 +1,4 @@
-from preprocessing.core.samples import Split
+from core.samples import Split
 
 def split_pool(samples, val_pct, rng):
     pool = list(samples)
