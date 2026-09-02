@@ -2,13 +2,19 @@
 
 benchmarks:
   benchmark1:
-    name: "squeaky_17-04-26"
-    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/squeaky_17-04-26"
+    name: "icra_holdout"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/icra_test_camera/icra_holdout"
     type: "subfolders"
     enabled: true
 
   benchmark2:
-    name: "giusto_per"
-    root: "/giusto/per/mettere/qualcosa/tanto/e/disabled/"
-    type: "standard"
+    name: "forgetting_holdout"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/forgetting_holdout"
+    type: "subfolders"
+    enabled: false
+
+  benchmark3:
+    name: "generalization_holdout"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/generalization_holdout"
+    type: "subfolders"
     enabled: false
