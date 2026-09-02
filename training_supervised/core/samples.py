@@ -18,6 +18,7 @@ class ImageSample:
     img_path: Path
     lbl_path: Path | None = None
     split: Split | None = None
+    group: str | None = None
 
     def is_annotated(self):
         return self.status == LblStatus.POSITIVE

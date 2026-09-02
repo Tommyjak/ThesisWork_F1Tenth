@@ -39,6 +39,7 @@ class SubfoldersLoader(Loader):
                         status = LblStatus.NEGATIVE,
                         ds_name = self.root.name,
                         img_path = img,
+                        group = subdir.name,
                     ))
                 elif lbl.stat().st_size == 0:
                     neg_samples.append(ImageSample(
@@ -46,6 +47,7 @@ class SubfoldersLoader(Loader):
                         ds_name = self.root.name,
                         img_path = img,
                         lbl_path = lbl,
+                        group = subdir.name,
                     ))
                 else:
                     pos_samples.append(ImageSample(
@@ -53,6 +55,7 @@ class SubfoldersLoader(Loader):
                         ds_name = self.root.name,
                         img_path = img,
                         lbl_path = lbl,
+                        group = subdir.name,
                     ))
 
         return pos_samples, neg_samples

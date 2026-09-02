@@ -27,6 +27,7 @@ class StandardLoader(Loader):
                     status = LblStatus.NEGATIVE,
                     ds_name = self.root.name,
                     img_path = img,
+                    group = self.root.name,
                 ))
 
             elif lbl.stat().st_size == 0:
@@ -35,6 +36,7 @@ class StandardLoader(Loader):
                     ds_name = self.root.name,
                     img_path = img,
                     lbl_path = lbl,
+                    group = self.root.name,
                 ))
             else:
                 pos_samples.append(ImageSample(
@@ -42,6 +44,7 @@ class StandardLoader(Loader):
                     ds_name = self.root.name,
                     img_path = img,
                     lbl_path = lbl,
+                    group = self.root.name,
                 ))
 
         return pos_samples, neg_samples
