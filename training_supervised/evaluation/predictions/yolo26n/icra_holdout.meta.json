@@ -1,0 +1,9 @@
+{
+  "weights": "/home/tm/Documents/universita/tirocinio_hipert/research/utils/training_supervised/models/yolo26n.pt",
+  "weights_sha": "9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef",
+  "benchmark": "icra_holdout",
+  "n_images": 886,
+  "conf": 0.001,
+  "iou": 0.7,
+  "imgsz": 640
+}

@@ -1,0 +1,9 @@
+{
+  "weights": "/home/tm/Documents/universita/tirocinio_hipert/research/utils/training_supervised/results/base_few/weights/best.pt",
+  "weights_sha": "d4e8fe817c65e7f62249994626a42a9cebd28cd51b647c9ba3f91c2338e3e797",
+  "benchmark": "icra_holdout",
+  "n_images": 886,
+  "conf": 0.001,
+  "iou": 0.7,
+  "imgsz": 640
+}
