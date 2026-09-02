@@ -1,10 +1,3 @@
-# voglio che prenda i sample divisi in split per dataset e, in base a come è creato l'esperimento, li vada a scrivere nel seguente modo:
-# out_dir/
-#   exp_1/ or exp_name/
-#     train.txt; val.txt; test.txt; config.yaml
-#   exp_2/ or exp_name/
-#     train.txt; val.txt; test.txt; config.yaml
-
 from pathlib import Path
 import yaml
 import shutil
@@ -13,7 +6,7 @@ import preprocessing.configs.exp_yaml_parser as eyp
 
 def write_experiments(train_multi, val_multi, out_dir):
     out_dir = Path(out_dir)
-    shutil.rmtree(out_dir)
+    shutil.rmtree(out_dir, ignore_errors=True)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for i, (train, val) in enumerate(zip(train_multi, val_multi)):

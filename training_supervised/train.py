@@ -5,10 +5,12 @@ from ultralytics import YOLO
 sys.path.append(str(Path(__file__).parent))
 
 from preprocessing.pipeline import run_preprocessing
+import preprocessing.configs.exp_yaml_parser as eyp 
 
 BASE_DIR = Path(__file__).resolve().parent
 REF_DIR = BASE_DIR / "references"
 RESULTS_DIR = BASE_DIR / "results"
+MODELS_DIR = BASE_DIR / "models"
 MODEL_PATH = BASE_DIR / "models/yolo26n.pt"
 
 TRAIN_DEFAULTS = dict(
@@ -43,7 +45,6 @@ TRAIN_DEFAULTS = dict(
     
     # --- evaluation ---
     iou = 0.7,              # NMS IoU. NON e' la soglia della mAP (fissa a 0.5:0.95)
-    conf = 0.001,           # necessario perche' la mAP integri tutta la curva PR
     
     # --- hardware ---
     device = 0,
@@ -62,9 +63,9 @@ def build_args(hyp=None):
     args['close_mosaic'] = min(10, args['epochs'] // 2)
     return args
 
-def train_model(config, run_name, hyp=None):
-    print(f"[{run_name}] loading model {MODEL_PATH.name}...")
-    model = YOLO(MODEL_PATH)
+def train_model(config, run_name, weights, hyp=None):
+    print(f"[{run_name}] loading model {weights.name}...")
+    model = YOLO(weights)
     print(f"[{run_name}] starting training...")
 
     results = model.train(
@@ -78,14 +79,38 @@ def train_model(config, run_name, hyp=None):
 
     return results
 
+def get_init_weights(run_name, models, meta):
+    init_from = meta[run_name]['init_from']
+
+    if init_from is None:
+        weights = MODELS_DIR / models[run_name]
+
+        if not weights.is_file():
+            raise FileNotFoundError(f"[{run_name}] modello base non trovato: {weights}")
+
+        return weights
+
+    weights = RESULTS_DIR / init_from / "weights" / "best.pt"
+
+    if not weights.is_file():
+        raise FileNotFoundError(f"[{run_name}] init_from '{init_from}' non ancora allenato: {weights}")
+
+    return weights
+
 def run_training_experiments():
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    experiments = sorted(e for e in REF_DIR.iterdir() if e.is_dir())
+    meta = eyp.get_exp_meta()
+
+    experiments = sorted(
+        (e for e in REF_DIR.iterdir() if e.is_dir()),
+        key = lambda e: (meta[e.name]['init_from'] is not None, e.name)
+    )
 
     if not experiments:
         raise RuntimeError(f"Nessun esperimento in {REF_DIR}")
 
+    models = dict(zip(eyp.get_exp_names(), eyp.get_exp_models()))
     done, skipped = [], []
 
     for exp in experiments:
@@ -96,7 +121,9 @@ def run_training_experiments():
             skipped.append(run_name)
             continue
 
-        train_model(exp / "config.yaml", run_name)
+        weights = get_init_weights(run_name, models, meta)
+
+        train_model(exp / "config.yaml", run_name, weights, meta[run_name]['hyp'])
         done.append(run_name)
 
     print(f"\nAllenati: {len(done)}  |  Saltati: {len(skipped)}")
