@@ -20,3 +20,8 @@ datasets:
     name: "objects_negatives_15-05-26"
     root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/objects_negatives_15-05-26"
     type: "subfolders"
+
+  dataset5:
+    name: "icra_base"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/icra_test_camera/icra_base"
+    type: "subfolders"

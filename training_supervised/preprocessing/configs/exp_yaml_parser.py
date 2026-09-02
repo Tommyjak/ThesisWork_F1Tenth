@@ -2,6 +2,7 @@ import yaml
 from pathlib import Path
 
 EXP_YAML_PATH = Path(__file__).resolve().parent / "experiments.yaml"
+DEFAULT_MODEL = "yolo26n.pt"
 
 def load_experiments_yaml(experiments_yaml_path=EXP_YAML_PATH):
     with open(experiments_yaml_path, 'r') as f:
@@ -20,6 +21,7 @@ def get_exp_infos(experiments_yaml_path=EXP_YAML_PATH):
             },
             'val_pct': exp['val_pct'],
             'seed': exp['seed'],
+            'model': exp.get('model', DEFAULT_MODEL)
         }
         for exp in experiments
     ]
@@ -49,3 +51,20 @@ def get_val_pcts():
 def get_exp_seeds():
     experiments = load_experiments_yaml(EXP_YAML_PATH)
     return [exp['seed'] for exp in experiments]
+
+def get_exp_models():
+    experiments = load_experiments_yaml(EXP_YAML_PATH)
+    return [exp.get('model', DEFAULT_MODEL) for exp in experiments]
+
+def get_exp_meta():
+    experiments = load_experiments_yaml(EXP_YAML_PATH)
+
+    return {
+        exp['name']: {
+            'init_from': exp.get('init_from'),
+            'arm': exp.get('arm'),
+            'tag': exp.get('tag'),
+            'hyp': exp.get('hyp', {}),
+        }
+        for exp in experiments
+    }

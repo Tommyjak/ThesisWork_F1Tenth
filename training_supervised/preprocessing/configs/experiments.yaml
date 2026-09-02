@@ -2,11 +2,165 @@
 
 experiments:
   exp1:
-    name: "full_with_negatives"
+    name: "base_full"
+    model: 'yolo26n.pt'
+    arm: "base"
+    tag: "full"
     datasets:
-      f1tenth.v2i.yolov11: {pos_ratio: 1.0, neg_ratio: 1.0}
-      huawei-uci2020-dataset: {pos_ratio: 1.0, neg_ratio: 1.0}
-      squeaky_17-04-26: {pos_ratio: 1.0, neg_ratio: 1.0}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 1.0}
       objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp2:
+    name: "base_balanced"
+    model: 'yolo26n.pt'
+    arm: "base"
+    tag: "balanced"
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.791}
+      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 0.791}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.791}
+    val_pct: 0.15
+    seed: 42
+
+  exp3:
+    name: "base_few"
+    model: 'yolo26n.pt'
+    arm: "base"
+    tag: "few"
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.355}
+      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 0.355}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.6}
+    val_pct: 0.15
+    seed: 42
+
+  exp4:
+    name: "retrain_full"
+    model: 'yolo26n.pt'
+    arm: "joint"
+    tag: "full"
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 1.0}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 1.0}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  
+  exp5:
+    name: "retrain_balanced"
+    model: 'yolo26n.pt'
+    arm: "joint"
+    tag: "balanced"
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.791}
+      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 0.791}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.791}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp6:
+    name: "retrain_few"
+    model: 'yolo26n.pt'
+    arm: "joint"
+    tag: "few"
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.355}
+      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 0.355}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.6}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  # fine-tune sequenziale: parte da base_X e vede solo il dominio nuovo.
+  # Il tag identifica la base di partenza, l'incremento e' sempre icra intero,
+  # esattamente come in retrain_X.
+  exp7:
+    name: "ft_full"
+    init_from: "base_full"
+    arm: "fine_tune"
+    tag: "full"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    datasets:
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp8:
+    name: "ft_balanced"
+    init_from: "base_balanced"
+    arm: "fine_tune"
+    tag: "balanced"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    datasets:
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp9:
+    name: "ft_few"
+    init_from: "base_few"
+    arm: "fine_tune"
+    tag: "few"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    datasets:
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  # fine-tune con replay: come ft_X piu' il 10% dei dati vecchi, mantenendo
+  # le proporzioni di negativi della base corrispondente
+  exp10:
+    name: "ftr_full"
+    init_from: "base_full"
+    arm: "replay"
+    tag: "full"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
+      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_17-04-26:           {pos_ratio: 0.1, neg_ratio: 0.1}
+      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.1}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp11:
+    name: "ftr_balanced"
+    init_from: "base_balanced"
+    arm: "replay"
+    tag: "balanced"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
+      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.0791}
+      squeaky_17-04-26:           {pos_ratio: 0.1, neg_ratio: 0.0791}
+      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.0791}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp12:
+    name: "ftr_few"
+    init_from: "base_few"
+    arm: "replay"
+    tag: "few"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
+      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.0355}
+      squeaky_17-04-26:           {pos_ratio: 0.1, neg_ratio: 0.0355}
+      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.06}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
     val_pct: 0.15
     seed: 42

@@ -36,10 +36,3 @@ def get_ds_roots():
 def get_ds_types():
     datasets = load_datasets_yaml(DS_YAML_PATH)
     return [ds['type'] for ds in datasets]
-
-def extract_name_from_path(path):
-    path = Path(path)
-    parts = path.parts
-    idx = parts.index("datasets")
-    # join everything after datasets/ using underscores
-    return "_".join(parts[idx + 1:])
