@@ -2,7 +2,8 @@ import cv2
 from ultralytics import YOLO
 from pathlib import Path
 
-MODEL_PATH = Path("../models/11-05-26_best.pt")
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_PATH = BASE_DIR / "models" / "11-05-26_best.pt"
 CONF_THRESHOLD = 0.6
 
 def main():
