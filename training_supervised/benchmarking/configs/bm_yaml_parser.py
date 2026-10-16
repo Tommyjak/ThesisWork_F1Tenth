@@ -1,7 +1,13 @@
+import os
 import yaml
 from pathlib import Path
 
-BMS_YAML_PATH = Path(__file__).resolve().parent / "benchmarks.yaml"
+# sovrascrivibile da ambiente, per far girare una campagna su config diverse
+# senza copiare sopra i file originali:
+#   BM_YAML=tmp_benchmarks.yaml python train.py
+# Un nome relativo si risolve in questa cartella; senza la variabile resta
+# benchmarks.yaml, e tutto funziona come prima
+BMS_YAML_PATH = Path(__file__).resolve().parent / os.environ.get("BM_YAML", "benchmarks.yaml")
 
 def load_benchmarks_yaml(benchmarks_yaml_path):
     benchmarks = []

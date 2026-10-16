@@ -1,7 +1,13 @@
+import os
 import yaml
 from pathlib import Path
 
-DS_YAML_PATH = Path(__file__).resolve().parent / "datasets.yaml"
+# sovrascrivibile da ambiente, per far girare una campagna su config diverse
+# senza copiare sopra i file originali:
+#   DS_YAML=tmp_datasets.yaml python train.py
+# Un nome relativo si risolve in questa cartella; senza la variabile resta
+# datasets.yaml, e tutto funziona come prima
+DS_YAML_PATH = Path(__file__).resolve().parent / os.environ.get("DS_YAML", "datasets.yaml")
 
 def load_datasets_yaml(datasets_yaml_path):
     datasets = []

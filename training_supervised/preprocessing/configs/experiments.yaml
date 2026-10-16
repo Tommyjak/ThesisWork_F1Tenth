@@ -1,166 +1,869 @@
 # experiments.yaml
+#
+# PRIMA TRANCHE della campagna definitiva: solo l'asse dei negativi della base.
+#
+# Quattro configurazioni, tre repliche di seed ciascuna, dodici run. I bracci di
+# continual learning NON sono qui: il loro init_from e' il vincitore di questa
+# tranche, che ancora non si conosce. Si aggiungono dopo il benchmark.
+#
+# --- PERCHE' TRE REPLICHE ------------------------------------------------------
+#
+# Non e' prudenza, e' la condizione perche' l'esperimento misuri qualcosa. Lo
+# studio pilota (results_pilot, 37 run) ha confrontato la dispersione FRA quattro
+# basi diverse con quella FRA quattro repliche della stessa base:
+#
+#   benchmark              metrica        sd fra basi  sd repliche  rapporto
+#   FIM_outside_holdout    mAP50               0.0234       0.0019     12.3x
+#   FIM_outside_holdout    mAP50-95            0.0101       0.0097      1.0x
+#   FIM_outside_holdout    FAR                 0.0317       0.0207      1.5x
+#   FIM_inside             mAP50               0.0104       0.0114      0.9x
+#   FIM_inside             FAR                 0.0418       0.0121      3.5x
+#   icra_holdout           mAP50               0.0692       0.0637      1.1x
+#
+# Su sette combinazioni su nove le basi sono INDISTINGUIBILI dal rumore di un
+# seed singolo. Con una run per configurazione questo esperimento non misurerebbe
+# la composizione dei negativi: misurerebbe la fortuna. Nel pilota e' successo
+# davvero - base_balanced prese un seed che su icra_holdout la portava a 4.4
+# deviazioni dalla media delle sue tre repliche.
+#
+# Servono circa 8*sigma^2/d^2 run per risolvere le differenze osservate: ~4 sulla
+# mAP50-95, ~2 sulla FAR. Tre e' il compromesso.
+#
+# --- LA SCALA ------------------------------------------------------------------
+#
+# Pool disponibile: 4234 positivi, 4603 negativi. Il rapporto neg:pos massimo e'
+# quindi 1.087, e questo vincola la scala piu' di quanto sembri: "50/50" e "tutti
+# i negativi" distano l'8.7%, cioe' sono la stessa condizione. "full" non compare
+# per questo - si riporta come nota, coincide con 50/50 entro il rumore.
+#
+#   90/10   470 negativi    neg:pos 0.111
+#   70/30  1815 negativi    neg:pos 0.429
+#   50/50  4234 negativi    neg:pos 1.000
+#
+# Quasi una decade fra il primo e il terzo. Tutte le sorgenti di negativi sono
+# scalate con lo STESSO fattore: quanti negativi e quali negativi sono due
+# domande diverse, e la seconda e' base_hard.
+#
+# --- SU base_hard: quantita' pareggiata, non pool intero -----------------------
+#
+# Il pool difficile (objects_negatives 1165 + squeaky_1Macchina 810) vale 1975
+# immagini, cioe' neg:pos 0.466. Usarlo tutto lo metterebbe fra 70/30 (0.429) e
+# 50/50, e il confronto con 70/30 mescolerebbe due variabili: 9% di negativi in
+# piu' E una provenienza diversa.
+#
+# Qui e' invece sottocampionato a 1815, esattamente la quantita' di 70/30. Cosi'
+# base_hard e base_70_30 differiscono per UNA sola cosa - da dove vengono i
+# negativi - e il confronto e' pulito. Costa 160 immagini di negativi difficili
+# non usate; vale il fatto che il risultato diventi interpretabile.
+#
+# --- COSA VA FATTO PRIMA DI LANCIARE -------------------------------------------
+#
+#   1. archiviare il pilota:  results -> results_pilot
+#                             evaluation/ledger.jsonl -> pilot_ledger.jsonl
+#                             evaluation/predictions -> pilot_predictions
+#      benchmark.py:50 assegna arm='baseline' a ogni run che non trova in
+#      get_exp_meta(). Le 37 run del pilota non sono piu' definite qui, quindi
+#      restando in results/ verrebbero tutte ri-etichettate come baseline.
+#
+#   2. le definizioni del pilota sono in lucky_experiments.yaml, non cancellarle:
+#      servono se un giorno vuoi ri-analizzare quei risultati.
+#
+# --- CRITERIO DI SELEZIONE, fissato ORA e non dopo aver visto i numeri ---------
+#
+#   Vince la configurazione con la mAP50 piu' alta su FIM_outside_holdout,
+#   mediata sulle tre repliche.
+#
+#   mAP50 e non mAP50-95: e' l'unica metrica con rapporto 12.3x. La mAP50-95 sta
+#   a 1.0x e sceglierci sopra sarebbe un sorteggio. Mai su icra_holdout: sarebbe
+#   selezione sul dominio che i bracci devono ancora imparare.
+#
+#   Prosegue la replica MEDIANA della configurazione vincente, non la migliore.
+#   Prendere la migliore reintrodurrebbe esattamente il bias che le repliche
+#   servono a togliere.
+#
+#   Se le configurazioni risultano indistinguibili - esito probabile, viste le
+#   varianze del pilota - non c'e' un vincitore: ci si pre-impegna sul 50/50 e si
+#   riporta il risultato nullo, che con tre repliche e' un'affermazione sostenuta
+#   e non un'assenza di dati.
+#
+# --- COSTO ---------------------------------------------------------------------
+#
+#   90/10   4704 img   47 min       per seed  4h 15
+#   70/30   6049 img   61 min       x3 seed  12h 44
+#   50/50   8468 img   85 min
+#   hard    6049 img   61 min       + ~20 min di benchmark sulle 12 run
+#
+# --- NOTE DI FORMATO -----------------------------------------------------------
+#
+# Il seed sta dentro hyp: e' l'unico punto da cui raggiunge model.train(). Il
+# campo seed a livello di esperimento governa solo il campionamento dei dati, e
+# con pos_ratio/neg_ratio identici fra repliche non cambierebbe nulla.
+#
+# patience = epochs, cioe' early stopping disattivato: le dodici run devono avere
+# lo stesso budget di ottimizzazione, altrimenti si fermano su criteri diversi.
+#
+# tag distinto per replica (90_10_s1, 90_10_s2, ...) perche' scalar() in
+# analysis.py alza ValueError se una cella (arm, tag) ha piu' di una riga.
+# L'aggregazione sulle repliche e' esplicita in BASE_REPLICAS, non implicita in
+# un pivot che farebbe una media silenziosa.
 
 experiments:
+
+  # ============================================================================
+  # 90/10 - il minimo di negativi.
+  #
+  # IDEA: quanto in basso si puo' scendere prima che i falsi allarmi diventino
+  # ingestibili? 470 negativi contro 4234 positivi. E' l'estremo che dice se i
+  # negativi servano davvero o siano soprattutto zavorra.
+  # ============================================================================
+
   exp1:
-    name: "base_full"
+    name: "base_90_10_s1"
     model: 'yolo26n.pt'
     arm: "base"
-    tag: "full"
+    tag: "90_10_s1"
+    hyp: {epochs: 100, patience: 100, seed: 1, save_period: 2}
     datasets:
-      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
-      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 1.0}
-      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 1.0}
-      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 1.0}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 0.1022}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.1022}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 0.1022}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 0.1022}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.1022}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 0.1022}
     val_pct: 0.15
     seed: 42
 
   exp2:
-    name: "base_balanced"
+    name: "base_90_10_s2"
     model: 'yolo26n.pt'
     arm: "base"
-    tag: "balanced"
+    tag: "90_10_s2"
+    hyp: {epochs: 100, patience: 100, seed: 2, save_period: 2}
     datasets:
-      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
-      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.791}
-      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 0.791}
-      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.791}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 0.1022}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.1022}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 0.1022}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 0.1022}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.1022}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 0.1022}
     val_pct: 0.15
     seed: 42
 
   exp3:
-    name: "base_few"
+    name: "base_90_10_s3"
     model: 'yolo26n.pt'
     arm: "base"
-    tag: "few"
+    tag: "90_10_s3"
+    hyp: {epochs: 100, patience: 100, seed: 3, save_period: 2}
     datasets:
-      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
-      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.355}
-      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 0.355}
-      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.6}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 0.1022}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.1022}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 0.1022}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 0.1022}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.1022}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 0.1022}
     val_pct: 0.15
     seed: 42
 
+  # ============================================================================
+  # 70/30 - il punto intermedio, e il termine di paragone di base_hard.
+  #
+  # IDEA: 1815 negativi, neg:pos 0.429. E' l'unica configurazione che ha un
+  # gemello per composizione (base_hard, stessa quantita' da sorgenti diverse),
+  # quindi porta due informazioni invece di una.
+  # ============================================================================
+
   exp4:
-    name: "retrain_full"
+    name: "base_70_30_s1"
     model: 'yolo26n.pt'
-    arm: "joint"
-    tag: "full"
+    arm: "base"
+    tag: "70_30_s1"
+    hyp: {epochs: 100, patience: 100, seed: 1, save_period: 2}
     datasets:
-      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
-      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 1.0}
-      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 1.0}
-      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 1.0}
-      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 0.3942}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.3942}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 0.3942}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 0.3942}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.3942}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 0.3942}
     val_pct: 0.15
     seed: 42
-  
+
   exp5:
-    name: "retrain_balanced"
+    name: "base_70_30_s2"
     model: 'yolo26n.pt'
-    arm: "joint"
-    tag: "balanced"
+    arm: "base"
+    tag: "70_30_s2"
+    hyp: {epochs: 100, patience: 100, seed: 2, save_period: 2}
     datasets:
-      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
-      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.791}
-      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 0.791}
-      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.791}
-      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 0.3942}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.3942}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 0.3942}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 0.3942}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.3942}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 0.3942}
     val_pct: 0.15
     seed: 42
 
   exp6:
-    name: "retrain_few"
+    name: "base_70_30_s3"
     model: 'yolo26n.pt'
-    arm: "joint"
-    tag: "few"
+    arm: "base"
+    tag: "70_30_s3"
+    hyp: {epochs: 100, patience: 100, seed: 3, save_period: 2}
     datasets:
-      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
-      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.355}
-      squeaky_17-04-26:           {pos_ratio: 1.0, neg_ratio: 0.355}
-      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.6}
-      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 0.3942}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.3942}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 0.3942}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 0.3942}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.3942}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 0.3942}
     val_pct: 0.15
     seed: 42
 
-  # fine-tune sequenziale: parte da base_X e vede solo il dominio nuovo.
-  # Il tag identifica la base di partenza, l'incremento e' sempre icra intero,
-  # esattamente come in retrain_X.
+  # ============================================================================
+  # 50/50 - un negativo per positivo, il massimo praticabile.
+  #
+  # IDEA: 4234 negativi. Coincide con "tutti i negativi disponibili" entro il
+  # rumore (4603, l'8.7% in piu'), quindi copre anche quella condizione. E' la
+  # configurazione di ripiego se le quattro risultano indistinguibili.
+  # ============================================================================
+
   exp7:
-    name: "ft_full"
-    init_from: "base_full"
-    arm: "fine_tune"
-    tag: "full"
-    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    name: "base_50_50_s1"
+    model: 'yolo26n.pt'
+    arm: "base"
+    tag: "50_50_s1"
+    hyp: {epochs: 100, patience: 100, seed: 1, save_period: 2}
     datasets:
-      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 1.0}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 1.0}
     val_pct: 0.15
     seed: 42
 
   exp8:
-    name: "ft_balanced"
-    init_from: "base_balanced"
-    arm: "fine_tune"
-    tag: "balanced"
-    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    name: "base_50_50_s2"
+    model: 'yolo26n.pt'
+    arm: "base"
+    tag: "50_50_s2"
+    hyp: {epochs: 100, patience: 100, seed: 2, save_period: 2}
     datasets:
-      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 1.0}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 1.0}
     val_pct: 0.15
     seed: 42
 
   exp9:
-    name: "ft_few"
-    init_from: "base_few"
-    arm: "fine_tune"
-    tag: "few"
-    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    name: "base_50_50_s3"
+    model: 'yolo26n.pt'
+    arm: "base"
+    tag: "50_50_s3"
+    hyp: {epochs: 100, patience: 100, seed: 3, save_period: 2}
     datasets:
-      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 1.0}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 1.0}
     val_pct: 0.15
     seed: 42
 
-  # fine-tune con replay: come ft_X piu' il 10% dei dati vecchi, mantenendo
-  # le proporzioni di negativi della base corrispondente
+  # ============================================================================
+  # hard - QUALI negativi, non quanti.
+  #
+  # IDEA: 1815 negativi come 70/30, ma tutti dai due pool difficili - le scatole
+  # di objects_negatives e le riprese 1Macchina senza annotazioni. Stessa
+  # quantita', sorgente diversa: il confronto con base_70_30 isola la
+  # provenienza. Se vince, i negativi difficili valgono piu' di quelli generici a
+  # parita' di numero, e per una macchina da corsa - dove il falso positivo su un
+  # cono o una scatola fa frenare - e' il risultato che conta di piu'.
+  # ============================================================================
+
   exp10:
-    name: "ftr_full"
-    init_from: "base_full"
-    arm: "replay"
-    tag: "full"
-    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    name: "base_hard_s1"
+    model: 'yolo26n.pt'
+    arm: "base"
+    tag: "hard_s1"
+    hyp: {epochs: 100, patience: 100, seed: 1, save_period: 2}
     datasets:
-      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
-      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.1}
-      squeaky_17-04-26:           {pos_ratio: 0.1, neg_ratio: 0.1}
-      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.1}
-      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 0.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.0}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 0.0}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 0.9188}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.9188}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 0.0}
     val_pct: 0.15
     seed: 42
 
   exp11:
-    name: "ftr_balanced"
-    init_from: "base_balanced"
-    arm: "replay"
-    tag: "balanced"
-    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    name: "base_hard_s2"
+    model: 'yolo26n.pt'
+    arm: "base"
+    tag: "hard_s2"
+    hyp: {epochs: 100, patience: 100, seed: 2, save_period: 2}
     datasets:
-      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
-      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.0791}
-      squeaky_17-04-26:           {pos_ratio: 0.1, neg_ratio: 0.0791}
-      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.0791}
-      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 0.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.0}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 0.0}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 0.9188}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.9188}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 0.0}
     val_pct: 0.15
     seed: 42
 
   exp12:
-    name: "ftr_few"
-    init_from: "base_few"
-    arm: "replay"
-    tag: "few"
-    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 10}
+    name: "base_hard_s3"
+    model: 'yolo26n.pt'
+    arm: "base"
+    tag: "hard_s3"
+    hyp: {epochs: 100, patience: 100, seed: 3, save_period: 2}
     datasets:
-      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
-      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.0355}
-      squeaky_17-04-26:           {pos_ratio: 0.1, neg_ratio: 0.0355}
-      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.06}
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 0.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 0.0}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 0.0}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 0.9188}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 0.9188}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 0.0}
+    val_pct: 0.15
+    seed: 42
+
+  # ============================================================================
+  # SECONDA TRANCHE - i bracci di continual learning, da base_50_50_s2.
+  #
+  # La base e' scelta per solidita', non per un criterio di prestazione: e' la
+  # configurazione con la dispersione fra seed piu' bassa (sd media 0.0091), la
+  # FAR piu' bassa e piu' stretta (0.0779 +/- 0.0026 su FIM_outside_holdout), e
+  # il pool di negativi completo - quindi il buffer di replay e' un campione di
+  # tutto cio' che esiste, non di un sottoinsieme. s2 e' la replica MEDIANA su
+  # mAP50 (0.9242 / 0.9266 / 0.9413): non la migliore, quella rappresentativa.
+  #
+  # NOTA SUL NOME: "50_50" e' stata allenata con neg_ratio 1.0, quindi ha preso
+  # tutti i 4603 negativi -> 52/48. In tesi si chiama "full".
+  #
+  # --- UN SOLO SCALARE PER CURVA ---------------------------------------------
+  #
+  # Tre curve, ciascuna varia UNA cosa e tiene ferme le altre:
+  #
+  #   joint    da yolo26n,       100 ep   varia la quota del VECCHIO conservata
+  #   ft       da base_50_50_s2,  30 ep   varia la quota di ICRA usata
+  #   replay   da base_50_50_s2,  30 ep   varia il buffer del VECCHIO
+  #
+  # I punti sono a decadi (2 / 10 / 50 / 100 %), non ravvicinati: il pilota ha
+  # mostrato che punti vicini (d25 vs d50, delta 0.018) non sono risolvibili
+  # con sd 0.010.
+  #
+  # --- LE COPPIE APPAIATE, il confronto piu' pulito della campagna -----------
+  #
+  # joint_wXX e ftr_XX vedono ESATTAMENTE gli stessi dati: XX% del vecchio + tutto
+  # ICRA. L'unica differenza e' il punto di partenza - yolo26n contro il
+  # checkpoint della base. Tre coppie (2%, 10%, 50%) rispondono a "riparto da
+  # zero o continuo?" a parita' di dati, e la colonna del tempo dice quanto costa
+  # ciascuna risposta: il joint fa 100 epoche, il replay 30.
+  #
+  # Il joint tiene 100 epoche anche con il 2% dei dati: e' il braccio "da zero"
+  # e il suo costo E' la misura. Abbassargli le epoche truccherebbe l'asse del
+  # tempo a suo favore.
+  #
+  # --- TRE SEED ------------------------------------------------------------
+  #
+  # Il confronto e' a base condivisa e gli effetti attesi sono 12x il rumore fra
+  # seed sul dominio vecchio: due repliche basterebbero. La terza serve a
+  # icra_holdout, dove il rumore di trasferimento e' 4x piu' grande (sd 0.044
+  # sulla mAP50 delle basi) e due punti non bastano a stimare una deviazione
+  # con cui si possa dire qualcosa. Costa il 50% in piu'; vale la tranquillita'.
+  #
+  # Convenzione per analysis.py: il seed 1 porta l'arm canonico e il tag "main"
+  # (o il tag della curva); i seed 2 e 3 portano arm "seed_rep". Cosi' nessuna
+  # cella (arm, tag) ha due righe, e l'aggregazione media +/- sd e' esplicita
+  # nei gruppi per nome di run in SEED_GROUPS.
+  #
+  # --- IL SEQUENZIALE NON C'E' -----------------------------------------------
+  #
+  # Rinviato: richiede un holdout per ogni task della sequenza (f1tenth,
+  # squeaky, FIM_outside, icra) per riempire la matrice R dopo ogni passo, e
+  # quindi una struttura dei dataset diversa da quella con cui sono state
+  # allenate le basi. Sara' una terza tranche.
+  #
+  # --- COSTO su forrester (6.05 ms/img/epoca / 1.4) ---------------------------
+  #
+  #   joint  w100 11507 img x100 ep x3 seed   4h 09
+  #          w50   7088                       2h 33
+  #          w10   3552                       1h 17
+  #          w2    2846                       1h 02
+  #   ft     d100  2670 x30 x3                  17 min
+  #          d50   1335                          9 min
+  #          d10    267                          2 min
+  #   replay  50   7088 x30 x3                  46 min
+  #          10   3552                          23 min
+  #           2   2846                          18 min
+  #                                    -------------
+  #   30 run                                 ≈ 10h 55
+  # ============================================================================
+
+  # --- joint: quanto vale riallenare tutto da zero ------------------------------
+
+  # IDEA: il retrain completo alle proporzioni naturali. Tetto teorico e riferimento
+  # dell'intransigence. 11507 immagini per 100 epoche: l'avversario piu' caro.
+  exp13:
+    name: "joint_w100_s1"
+    model: 'yolo26n.pt'
+    arm: "joint"
+    tag: "main"
+    hyp: {epochs: 100, patience: 100, seed: 1, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 1.0}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 1.0}
       icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
     val_pct: 0.15
     seed: 42
+  exp14:
+    name: "joint_w100_s2"
+    model: 'yolo26n.pt'
+    arm: "seed_rep"
+    tag: "joint_w100_s2"
+    hyp: {epochs: 100, patience: 100, seed: 2, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 1.0}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 1.0}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp15:
+    name: "joint_w100_s3"
+    model: 'yolo26n.pt'
+    arm: "seed_rep"
+    tag: "joint_w100_s3"
+    hyp: {epochs: 100, patience: 100, seed: 3, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 1.0, neg_ratio: 1.0}
+      huawei-uci2020-dataset:     {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_2Macchine:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      squeaky_1Macchina:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      objects_negatives_15-05-26: {pos_ratio: 1.0, neg_ratio: 1.0}
+      FIM_outside_base:           {pos_ratio: 1.0, neg_ratio: 1.0}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  # IDEA: da zero con meta' del vecchio. Gemello di ftr_50 a parita' di dati.
+  exp16:
+    name: "joint_w50_s1"
+    model: 'yolo26n.pt'
+    arm: "joint_sweep"
+    tag: "w50"
+    hyp: {epochs: 100, patience: 100, seed: 1, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.5, neg_ratio: 0.5}
+      huawei-uci2020-dataset:     {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_2Macchine:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_1Macchina:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      objects_negatives_15-05-26: {pos_ratio: 0.5, neg_ratio: 0.5}
+      FIM_outside_base:           {pos_ratio: 0.5, neg_ratio: 0.5}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp17:
+    name: "joint_w50_s2"
+    model: 'yolo26n.pt'
+    arm: "seed_rep"
+    tag: "joint_w50_s2"
+    hyp: {epochs: 100, patience: 100, seed: 2, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.5, neg_ratio: 0.5}
+      huawei-uci2020-dataset:     {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_2Macchine:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_1Macchina:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      objects_negatives_15-05-26: {pos_ratio: 0.5, neg_ratio: 0.5}
+      FIM_outside_base:           {pos_ratio: 0.5, neg_ratio: 0.5}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp18:
+    name: "joint_w50_s3"
+    model: 'yolo26n.pt'
+    arm: "seed_rep"
+    tag: "joint_w50_s3"
+    hyp: {epochs: 100, patience: 100, seed: 3, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.5, neg_ratio: 0.5}
+      huawei-uci2020-dataset:     {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_2Macchine:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_1Macchina:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      objects_negatives_15-05-26: {pos_ratio: 0.5, neg_ratio: 0.5}
+      FIM_outside_base:           {pos_ratio: 0.5, neg_ratio: 0.5}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  # IDEA: da zero con il 10% del vecchio. Gemello di ftr_10.
+  exp19:
+    name: "joint_w10_s1"
+    model: 'yolo26n.pt'
+    arm: "joint_sweep"
+    tag: "w10"
+    hyp: {epochs: 100, patience: 100, seed: 1, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
+      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_2Macchine:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_1Macchina:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.1}
+      FIM_outside_base:           {pos_ratio: 0.1, neg_ratio: 0.1}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp20:
+    name: "joint_w10_s2"
+    model: 'yolo26n.pt'
+    arm: "seed_rep"
+    tag: "joint_w10_s2"
+    hyp: {epochs: 100, patience: 100, seed: 2, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
+      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_2Macchine:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_1Macchina:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.1}
+      FIM_outside_base:           {pos_ratio: 0.1, neg_ratio: 0.1}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp21:
+    name: "joint_w10_s3"
+    model: 'yolo26n.pt'
+    arm: "seed_rep"
+    tag: "joint_w10_s3"
+    hyp: {epochs: 100, patience: 100, seed: 3, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
+      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_2Macchine:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_1Macchina:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.1}
+      FIM_outside_base:           {pos_ratio: 0.1, neg_ratio: 0.1}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  # IDEA: da zero con il 2% del vecchio. Gemello di ftr_02: dove ripartire da zero
+  # dovrebbe perdere di piu' rispetto a continuare.
+  exp22:
+    name: "joint_w2_s1"
+    model: 'yolo26n.pt'
+    arm: "joint_sweep"
+    tag: "w2"
+    hyp: {epochs: 100, patience: 100, seed: 1, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.02, neg_ratio: 0.02}
+      huawei-uci2020-dataset:     {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_2Macchine:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_1Macchina:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      objects_negatives_15-05-26: {pos_ratio: 0.02, neg_ratio: 0.02}
+      FIM_outside_base:           {pos_ratio: 0.02, neg_ratio: 0.02}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp23:
+    name: "joint_w2_s2"
+    model: 'yolo26n.pt'
+    arm: "seed_rep"
+    tag: "joint_w2_s2"
+    hyp: {epochs: 100, patience: 100, seed: 2, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.02, neg_ratio: 0.02}
+      huawei-uci2020-dataset:     {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_2Macchine:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_1Macchina:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      objects_negatives_15-05-26: {pos_ratio: 0.02, neg_ratio: 0.02}
+      FIM_outside_base:           {pos_ratio: 0.02, neg_ratio: 0.02}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp24:
+    name: "joint_w2_s3"
+    model: 'yolo26n.pt'
+    arm: "seed_rep"
+    tag: "joint_w2_s3"
+    hyp: {epochs: 100, patience: 100, seed: 3, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.02, neg_ratio: 0.02}
+      huawei-uci2020-dataset:     {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_2Macchine:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_1Macchina:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      objects_negatives_15-05-26: {pos_ratio: 0.02, neg_ratio: 0.02}
+      FIM_outside_base:           {pos_ratio: 0.02, neg_ratio: 0.02}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  # --- fine-tuning nudo: quanti dati nuovi servono, a memoria zero -----------
+
+  # IDEA: il metodo economico e ingenuo. Tutto ICRA, niente del vecchio. La cella
+  # fine_tune della tabella e il pavimento di ogni confronto sull'oblio.
+  exp25:
+    name: "ft_s1"
+    init_from: "base_50_50_s2"
+    arm: "fine_tune"
+    tag: "main"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp26:
+    name: "ft_s2"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ft_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp27:
+    name: "ft_s3"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ft_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  # IDEA: meta' di ICRA (202 positivi).
+  exp28:
+    name: "ft_d50_s1"
+    init_from: "base_50_50_s2"
+    arm: "ft_data_sweep"
+    tag: "d50"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      icra_base:                  {pos_ratio: 0.5, neg_ratio: 0.5}
+    val_pct: 0.15
+    seed: 42
+  exp29:
+    name: "ft_d50_s2"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ft_d50_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      icra_base:                  {pos_ratio: 0.5, neg_ratio: 0.5}
+    val_pct: 0.15
+    seed: 42
+  exp30:
+    name: "ft_d50_s3"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ft_d50_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      icra_base:                  {pos_ratio: 0.5, neg_ratio: 0.5}
+    val_pct: 0.15
+    seed: 42
+  # IDEA: un decimo di ICRA (40 positivi). Nel pilota il 10% dava l'83% della
+  # prestazione a piena quantita': quanto costa davvero annotare una pista nuova.
+  exp31:
+    name: "ft_d10_s1"
+    init_from: "base_50_50_s2"
+    arm: "ft_data_sweep"
+    tag: "d10"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      icra_base:                  {pos_ratio: 0.1, neg_ratio: 0.1}
+    val_pct: 0.15
+    seed: 42
+  exp32:
+    name: "ft_d10_s2"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ft_d10_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      icra_base:                  {pos_ratio: 0.1, neg_ratio: 0.1}
+    val_pct: 0.15
+    seed: 42
+  exp33:
+    name: "ft_d10_s3"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ft_d10_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      icra_base:                  {pos_ratio: 0.1, neg_ratio: 0.1}
+    val_pct: 0.15
+    seed: 42
+
+  # --- replay: quanto del vecchio devo conservare -----------------------------
+
+  # IDEA: buffer al 50% (4419 immagini). Il punto alto della curva: se qui non si
+  # raggiunge il joint, il replay ha un tetto strutturale.
+  exp34:
+    name: "ftr_50_s1"
+    init_from: "base_50_50_s2"
+    arm: "replay_sweep"
+    tag: "buf50"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.5, neg_ratio: 0.5}
+      huawei-uci2020-dataset:     {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_2Macchine:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_1Macchina:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      objects_negatives_15-05-26: {pos_ratio: 0.5, neg_ratio: 0.5}
+      FIM_outside_base:           {pos_ratio: 0.5, neg_ratio: 0.5}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp35:
+    name: "ftr_50_s2"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ftr_50_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.5, neg_ratio: 0.5}
+      huawei-uci2020-dataset:     {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_2Macchine:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_1Macchina:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      objects_negatives_15-05-26: {pos_ratio: 0.5, neg_ratio: 0.5}
+      FIM_outside_base:           {pos_ratio: 0.5, neg_ratio: 0.5}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp36:
+    name: "ftr_50_s3"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ftr_50_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.5, neg_ratio: 0.5}
+      huawei-uci2020-dataset:     {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_2Macchine:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      squeaky_1Macchina:          {pos_ratio: 0.5, neg_ratio: 0.5}
+      objects_negatives_15-05-26: {pos_ratio: 0.5, neg_ratio: 0.5}
+      FIM_outside_base:           {pos_ratio: 0.5, neg_ratio: 0.5}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  # IDEA: buffer al 10% (884 immagini). La cella replay della tabella: il metodo che
+  # la tesi propone.
+  exp37:
+    name: "ftr_10_s1"
+    init_from: "base_50_50_s2"
+    arm: "replay"
+    tag: "main"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
+      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_2Macchine:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_1Macchina:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.1}
+      FIM_outside_base:           {pos_ratio: 0.1, neg_ratio: 0.1}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp38:
+    name: "ftr_10_s2"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ftr_10_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
+      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_2Macchine:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_1Macchina:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.1}
+      FIM_outside_base:           {pos_ratio: 0.1, neg_ratio: 0.1}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp39:
+    name: "ftr_10_s3"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ftr_10_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.1, neg_ratio: 0.1}
+      huawei-uci2020-dataset:     {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_2Macchine:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      squeaky_1Macchina:          {pos_ratio: 0.1, neg_ratio: 0.1}
+      objects_negatives_15-05-26: {pos_ratio: 0.1, neg_ratio: 0.1}
+      FIM_outside_base:           {pos_ratio: 0.1, neg_ratio: 0.1}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  # IDEA: buffer al 2% (177 immagini). Quasi niente: dice se anche un buffer simbolico
+  # arresta gia' l'oblio - la domanda per un dispositivo edge.
+  exp40:
+    name: "ftr_02_s1"
+    init_from: "base_50_50_s2"
+    arm: "replay_sweep"
+    tag: "buf02"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.02, neg_ratio: 0.02}
+      huawei-uci2020-dataset:     {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_2Macchine:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_1Macchina:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      objects_negatives_15-05-26: {pos_ratio: 0.02, neg_ratio: 0.02}
+      FIM_outside_base:           {pos_ratio: 0.02, neg_ratio: 0.02}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp41:
+    name: "ftr_02_s2"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ftr_02_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.02, neg_ratio: 0.02}
+      huawei-uci2020-dataset:     {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_2Macchine:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_1Macchina:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      objects_negatives_15-05-26: {pos_ratio: 0.02, neg_ratio: 0.02}
+      FIM_outside_base:           {pos_ratio: 0.02, neg_ratio: 0.02}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+  exp42:
+    name: "ftr_02_s3"
+    init_from: "base_50_50_s2"
+    arm: "seed_rep"
+    tag: "ftr_02_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      f1tenth.v2i.yolov11:        {pos_ratio: 0.02, neg_ratio: 0.02}
+      huawei-uci2020-dataset:     {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_2Macchine:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      squeaky_1Macchina:          {pos_ratio: 0.02, neg_ratio: 0.02}
+      objects_negatives_15-05-26: {pos_ratio: 0.02, neg_ratio: 0.02}
+      FIM_outside_base:           {pos_ratio: 0.02, neg_ratio: 0.02}
+      icra_base:                  {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  # ============================================================================
+  # La campagna SEQUENZIALE non sta qui: e' in tmp_experiments.yaml (24 run) e
+  # si lancia a parte, dopo, con
+  #   DS_YAML=tmp_datasets.yaml EXP_YAML=tmp_experiments.yaml BM_YAML=tmp_benchmarks.yaml
+  # perche' usa i dataset seq_* di tmp_datasets/ e i due holdout in piu'.
+  # ============================================================================

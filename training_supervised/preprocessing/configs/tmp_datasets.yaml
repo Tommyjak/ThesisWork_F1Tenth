@@ -1,0 +1,103 @@
+# tmp_datasets.yaml
+#
+# Dataset per la campagna SEQUENZIALE, su tmp_datasets/ - una copia di datasets/
+# con due holdout in piu' ritagliati (f1tenth, squeaky). E' un SOVRAINSIEME di
+# datasets.yaml: le sette voci originali restano, cosi' le 42 run gia' allenate
+# continuano a risolvere i loro dataset quando run_preprocessing rigenera le
+# references. Le sette voci nuove hanno prefisso seq_ e puntano a tmp_datasets/.
+#
+# Il parser legge SOLO datasets.yaml (ds_yaml_parser.py:4). Per usare questo
+# file:   cp tmp_datasets.yaml datasets.yaml   (l'originale e' in git)
+#
+# I quattro task della sequenza:
+#
+#   1  public       seq_f1tenth (1998) + seq_huawei (514)               = 2512
+#   2  squeaky lab  seq_squeaky_2M (1388) + seq_squeaky_1M (810)
+#                   + seq_obj_neg (1165)                               = 3363
+#   3  FIM outside  seq_FIM_outside (1605)                             = 1605
+#   4  icra         seq_icra (2670)                                    = 2670
+#
+# objects_negatives e 1Macchina stanno nel task 2 perche' sono i negativi di
+# quel laboratorio: un passo di soli negativi non e' un task (niente mAP, e
+# ultralytics sceglierebbe best.pt su un fitness a zero).
+#
+# seq_FIM_outside e seq_icra puntano agli stessi split di datasets/: i loro
+# holdout sono IDENTICI a quelli della tranche 2, e i confronti con joint_w100 e
+# ftr_10 su quei due benchmark restano validi.
+
+datasets:
+  # --- campagna precedente, invariati (puntano a datasets/) --------------------
+  dataset1:
+    name: "f1tenth.v2i.yolov11"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/f1tenth.v2i.yolov11"
+    type: "subfolders"
+
+  dataset2:
+    name: "huawei-uci2020-dataset"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/huawei-uci2020-dataset"
+    type: "standard"
+
+  dataset3:
+    name: "squeaky_1Macchina"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/squeaky_17-04-26/squeaky_1Macchina"
+    type: "subfolders"
+
+  dataset4:
+    name: "squeaky_2Macchine"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/squeaky_17-04-26/squeaky_2Macchine"
+    type: "subfolders"
+
+  dataset5:
+    name: "objects_negatives_15-05-26"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/objects_negatives_15-05-26"
+    type: "subfolders"
+
+  dataset6:
+    name: "icra_base"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/icra_test_camera/icra_base"
+    type: "subfolders"
+
+  dataset7:
+    name: "FIM_outside_base"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/FIM_outside/FIM_outside_base"
+    type: "subfolders"
+
+  # --- sequenziale (puntano a tmp_datasets/) -----------------------------------
+  # task 1
+  dataset8:
+    name: "seq_f1tenth"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/f1tenth.v2i.yolov11"
+    type: "subfolders"
+
+  dataset9:
+    name: "seq_huawei"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/huawei-uci2020-dataset"
+    type: "standard"
+
+  # task 2
+  dataset10:
+    name: "seq_squeaky_2M"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/squeaky_17-04-26/squeaky_2Macchine"
+    type: "subfolders"
+
+  dataset11:
+    name: "seq_squeaky_1M"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/squeaky_17-04-26/squeaky_1Macchina"
+    type: "subfolders"
+
+  dataset12:
+    name: "seq_obj_neg"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/objects_negatives_15-05-26"
+    type: "subfolders"
+
+  # task 3
+  dataset13:
+    name: "seq_FIM_outside"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/FIM_outside/FIM_outside_base"
+    type: "subfolders"
+
+  # task 4
+  dataset14:
+    name: "seq_icra"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/icra_test_camera/icra_base"
+    type: "subfolders"

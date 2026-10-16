@@ -23,6 +23,12 @@ def build_row(run_name, benchmark_name, slice_results, conf_op, meta = None, ext
         row['weights_sha'] = meta.get('weights_sha')
         row['n_images'] = meta.get('n_images')
 
+        # macchina e tempi dell'inferenza, dal meta del dump. Colonne piatte,
+        # cosi' analysis.py le legge come qualunque altra
+        for key in ('host', 'device', 'torch',
+                    'infer_ms_per_img', 'wall_ms_per_img', 'wall_s'):
+            row[key] = meta.get(key)
+
     if extra is not None:
         for key in extra:
             row[key] = extra[key]

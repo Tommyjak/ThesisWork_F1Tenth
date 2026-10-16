@@ -17,17 +17,59 @@ __pycache__/
 *.py[cod]
 *$py.class
 .claude/
-__init__.py
 
 # --- Machine Learning & Outputs ---
-# Local results or experiment logs that might be large/unique to your run
-# If you want to keep the .png files in Git, comment these out
-*.png
 *.pt
+
+# Cartelle di output: la cartella resta nel repository, il contenuto no.
+# Il pattern e' sempre lo stesso: si ignora <cartella>/* invece di <cartella>/,
+# cosi' la directory non e' esclusa in blocco e la riga con '!' puo' riammettere
+# il segnaposto. Serve un file .gitkeep dentro ciascuna, perche' git non
+# registra directory vuote:
+#
+#   touch training_supervised/evaluation/plots/.gitkeep
+#
+# NB: perche' questo funzioni le quattro voci devono essere directory vere.
+# results, references ed evaluation/predictions oggi sono symlink dentro
+# campaigns/ (vedi use_campaign.sh): finche' lo sono git vede un symlink e non
+# una cartella, e queste regole non hanno effetto su di loro.
+training_supervised/evaluation/plots/*
+!training_supervised/evaluation/plots/.gitkeep
+
+training_supervised/evaluation/predictions/*
+!training_supervised/evaluation/predictions/.gitkeep
+
 training_supervised/references/*
+!training_supervised/references/.gitkeep
+
 training_supervised/results/*
+!training_supervised/results/.gitkeep
+
+# I quattro symlink che use_campaign.sh crea per puntare alla campagna attiva.
+# Git non segue i symlink: li registrerebbe come tali, e siccome la loro
+# destinazione sta in campaigns/ (non pubblicata) chi clona si troverebbe
+# quattro collegamenti pendenti. Li ricrea use_campaign.sh al primo lancio.
+# Niente '/*' finale: con quello si ignora il contenuto di una directory, non
+# il symlink stesso, che e' il motivo per cui finora comparivano in git status.
+training_supervised/results
+training_supervised/references
+training_supervised/evaluation/predictions
+training_supervised/evaluation/ledger.jsonl
+
+# --- Script di sincronizzazione con le macchine del laboratorio -------------
+# Contengono nomi host, utenze e percorsi assoluti delle macchine di training:
+# restano in locale, non servono a chi clona il repository
+sync_forrester.sh
+sync_freeman.sh
 
 # --- OS Specific ---
 .DS_Store
 .directory
 Thumbs.db
+
+# log di training lasciati dalle sessioni remote
+training_supervised/*.log
+
+# dati delle campagne sperimentali: ledger, dump, checkpoint, reference.
+# Rigenerabili sulle macchine di training, troppo grandi per il repository
+training_supervised/campaigns/

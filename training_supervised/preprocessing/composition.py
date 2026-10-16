@@ -29,6 +29,20 @@ def build_experiments(datasets):
 
         train, val = [], []
 
+        # un dataset richiesto dallo yaml degli esperimenti ma assente da quello
+        # dei dataset produceva un training set VUOTO in silenzio (il ciclo sotto
+        # salta i dataset non richiesti, non i richiesti mancanti). E' successo
+        # con i seq_* e datasets.yaml di default: meglio fermarsi qui che a meta'
+        # di una run da 100 epoche su zero immagini
+        loaded = {ds.name for ds in datasets}
+        missing = sorted(set(ds_requested) - loaded)
+
+        if missing:
+            raise KeyError(
+                f"[{exp_names[i]}] dataset richiesti ma non definiti nello yaml "
+                f"dei dataset: {missing}. Serve DS_YAML=tmp_datasets.yaml?"
+            )
+
         for ds in datasets:
             if ds.name not in ds_requested:
                 continue

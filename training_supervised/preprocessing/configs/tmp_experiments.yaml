@@ -1,0 +1,437 @@
+# tmp_experiments.yaml
+#
+# La sola campagna SEQUENZIALE, 24 run. Estratta da experiments.yaml (dove resta
+# anche, come exp43-exp66, per registro) e rinumerata.
+#
+# Si usa con le tre variabili d'ambiente, mai copiando sopra gli originali:
+#
+#   DS_YAML=tmp_datasets.yaml EXP_YAML=tmp_experiments.yaml BM_YAML=tmp_benchmarks.yaml \
+#     python train.py
+#   (stesse variabili per benchmark.py)
+#
+# Perche' un file separato e non il file a 66: train.py:119 salta una run solo
+# se results/<nome> esiste. Per isolare il benchmark, results/ va archiviata -
+# e a quel punto le 42 run della campagna precedente, ancora definite nel file
+# a 66, verrebbero RIALLENATE da capo. Con questo file si allenano solo le 24.
+
+experiments:
+
+  # ============================================================================
+  # TERZA TRANCHE - continual learning SEQUENZIALE, su tmp_datasets/.
+  #
+  # Richiede datasets.yaml = tmp_datasets.yaml e benchmarks.yaml =
+  # tmp_benchmarks.yaml, e results/ SVUOTATO delle 42 run precedenti (che hanno
+  # visto in training le immagini dei due holdout nuovi, f1tenth e squeaky).
+  #
+  # --- LA SEQUENZA -------------------------------------------------------------
+  #
+  #   passo 1  public       f1tenth/train + huawei                  2512 img
+  #   passo 2  squeaky lab  2Macchine_{1,4,5,7,8} + 1Macchina + obj  3363 img
+  #   passo 3  FIM outside  FIM_outside_base                        1605 img
+  #   passo 4  icra         icra_base                               2670 img
+  #
+  # Un holdout per task -> matrice R 4x4 riempita dopo ogni passo, piu'
+  # FIM_inside fuori matrice. FIM_outside_holdout e icra_holdout sono IDENTICI
+  # a quelli della tranche 2: il modello finale della sequenza si confronta
+  # direttamente con joint_w100 e ftr_10 su quei due benchmark.
+  #
+  # --- TRE CATENE ------------------------------------------------------------
+  #
+  #   ingenua   seq1 -> seq2_ft  -> seq3_ft  -> seq4_ft     nessuna memoria
+  #   replay    seq1 -> seq2_ftr -> seq3_ftr -> seq4_ftr    10% di ogni task
+  #                                                         precedente
+  #   joint     tutti e 4 i task insieme, da zero            il riferimento sui
+  #                                                         nuovi holdout
+  #
+  # Il passo 1 e' CONDIVISO fra le due catene: stesso checkpoint, divergono dal
+  # passo 2. Ogni passo e' un esperimento con init_from al precedente; l'ordine
+  # alfabetico di train.py (seq1 < seq2 < seq3 < seq4) garantisce che il
+  # checkpoint esista quando serve.
+  #
+  # Il passo 1 usa gli iperparametri della base (100 epoche, lr 1e-3) perche'
+  # parte da COCO; i passi successivi quelli del fine-tuning (30 ep, lr 1e-4).
+  # Il replay e' "10% di ogni task precedente" e cresce col passo
+  # (251 -> 587 -> 747 immagini): coerente con la tranche 2. L'alternativa a
+  # budget fisso e' piu' realistica per l'edge ma va calcolata passo per passo.
+  #
+  # Perche' serve un joint proprio: joint_w100 della tranche 2 ha visto le
+  # immagini di f1tenth_holdout e squeaky_holdout. Sui due holdout nuovi non e'
+  # un riferimento pulito.
+  #
+  # --- ARM E TAG -------------------------------------------------------------
+  #
+  # Gli arm seq_* sono fuori dalla tabella canonica di analysis.py: la matrice R
+  # si costruisce per nome di run con r_matrix(), non per (arm, tag). Il tag
+  # codifica catena/passo/seed.
+  #
+  # --- COSTO su forrester (3.95 ms/img/epoca) ---------------------------------
+  #
+  #   seq1        2512 x100 ep     16.5 min
+  #   catena ft   3363+1605+2670 x30   15 min
+  #   catena ftr  3614+2192+3417 x30   18 min
+  #   joint      10150 x100 ep        67 min
+  #   per seed  ~117 min   x3 seed  ~5h 50
+  # ============================================================================
+
+  # --- passo 1: la base della sequenza, condivisa -----------------------------
+
+  # IDEA: il primo dominio, da COCO. E' l'analogo di base_50_50 per la sequenza,
+  # e la sua colonna R[1][1] e' il riferimento dell'oblio del task 1.
+
+  exp1:
+    name: "seq1_s1"
+    model: 'yolo26n.pt'
+    arm: "seq_base"
+    tag: "seq1_s1"
+    hyp: {epochs: 100, patience: 100, seed: 1, save_period: 2}
+    datasets:
+      seq_f1tenth:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_huawei:           {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp2:
+    name: "seq1_s2"
+    model: 'yolo26n.pt'
+    arm: "seq_base"
+    tag: "seq1_s2"
+    hyp: {epochs: 100, patience: 100, seed: 2, save_period: 2}
+    datasets:
+      seq_f1tenth:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_huawei:           {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp3:
+    name: "seq1_s3"
+    model: 'yolo26n.pt'
+    arm: "seq_base"
+    tag: "seq1_s3"
+    hyp: {epochs: 100, patience: 100, seed: 3, save_period: 2}
+    datasets:
+      seq_f1tenth:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_huawei:           {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+
+  # --- catena ingenua: fine-tuning senza memoria ------------------------------
+
+
+  # IDEA: quattro fine-tuning in fila senza replay. E' il comportamento di un
+  # sistema che si adatta ingenuamente a ogni pista nuova.
+
+  exp4:
+    name: "seq2_ft_s1"
+    init_from: "seq1_s1"
+    arm: "seq_ft"
+    tag: "seq2_ft_s1"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      seq_squeaky_2M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_1M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_obj_neg:          {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp5:
+    name: "seq3_ft_s1"
+    init_from: "seq2_ft_s1"
+    arm: "seq_ft"
+    tag: "seq3_ft_s1"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      seq_FIM_outside:      {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp6:
+    name: "seq4_ft_s1"
+    init_from: "seq3_ft_s1"
+    arm: "seq_ft"
+    tag: "seq4_ft_s1"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      seq_icra:             {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp7:
+    name: "seq2_ft_s2"
+    init_from: "seq1_s2"
+    arm: "seq_ft"
+    tag: "seq2_ft_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      seq_squeaky_2M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_1M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_obj_neg:          {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp8:
+    name: "seq3_ft_s2"
+    init_from: "seq2_ft_s2"
+    arm: "seq_ft"
+    tag: "seq3_ft_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      seq_FIM_outside:      {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp9:
+    name: "seq4_ft_s2"
+    init_from: "seq3_ft_s2"
+    arm: "seq_ft"
+    tag: "seq4_ft_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      seq_icra:             {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp10:
+    name: "seq2_ft_s3"
+    init_from: "seq1_s3"
+    arm: "seq_ft"
+    tag: "seq2_ft_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      seq_squeaky_2M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_1M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_obj_neg:          {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp11:
+    name: "seq3_ft_s3"
+    init_from: "seq2_ft_s3"
+    arm: "seq_ft"
+    tag: "seq3_ft_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      seq_FIM_outside:      {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp12:
+    name: "seq4_ft_s3"
+    init_from: "seq3_ft_s3"
+    arm: "seq_ft"
+    tag: "seq4_ft_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      seq_icra:             {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+
+  # --- catena con replay: 10% di ogni task precedente -------------------------
+
+
+  # IDEA: la stessa sequenza con il metodo della tesi. Se l'oblio resta contenuto
+  # su quattro passi e non solo su uno, il replay regge a una sequenza vera.
+
+  exp13:
+    name: "seq2_ftr_s1"
+    init_from: "seq1_s1"
+    arm: "seq_ftr"
+    tag: "seq2_ftr_s1"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      seq_squeaky_2M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_1M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_obj_neg:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_f1tenth:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_huawei:           {pos_ratio: 0.10, neg_ratio: 0.10}
+    val_pct: 0.15
+    seed: 42
+
+  exp14:
+    name: "seq3_ftr_s1"
+    init_from: "seq2_ftr_s1"
+    arm: "seq_ftr"
+    tag: "seq3_ftr_s1"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      seq_FIM_outside:      {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_f1tenth:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_huawei:           {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_2M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_1M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_obj_neg:          {pos_ratio: 0.10, neg_ratio: 0.10}
+    val_pct: 0.15
+    seed: 42
+
+  exp15:
+    name: "seq4_ftr_s1"
+    init_from: "seq3_ftr_s1"
+    arm: "seq_ftr"
+    tag: "seq4_ftr_s1"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 1, save_period: 2}
+    datasets:
+      seq_icra:             {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_f1tenth:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_huawei:           {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_2M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_1M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_obj_neg:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_FIM_outside:      {pos_ratio: 0.10, neg_ratio: 0.10}
+    val_pct: 0.15
+    seed: 42
+
+  exp16:
+    name: "seq2_ftr_s2"
+    init_from: "seq1_s2"
+    arm: "seq_ftr"
+    tag: "seq2_ftr_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      seq_squeaky_2M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_1M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_obj_neg:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_f1tenth:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_huawei:           {pos_ratio: 0.10, neg_ratio: 0.10}
+    val_pct: 0.15
+    seed: 42
+
+  exp17:
+    name: "seq3_ftr_s2"
+    init_from: "seq2_ftr_s2"
+    arm: "seq_ftr"
+    tag: "seq3_ftr_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      seq_FIM_outside:      {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_f1tenth:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_huawei:           {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_2M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_1M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_obj_neg:          {pos_ratio: 0.10, neg_ratio: 0.10}
+    val_pct: 0.15
+    seed: 42
+
+  exp18:
+    name: "seq4_ftr_s2"
+    init_from: "seq3_ftr_s2"
+    arm: "seq_ftr"
+    tag: "seq4_ftr_s2"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 2, save_period: 2}
+    datasets:
+      seq_icra:             {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_f1tenth:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_huawei:           {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_2M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_1M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_obj_neg:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_FIM_outside:      {pos_ratio: 0.10, neg_ratio: 0.10}
+    val_pct: 0.15
+    seed: 42
+
+  exp19:
+    name: "seq2_ftr_s3"
+    init_from: "seq1_s3"
+    arm: "seq_ftr"
+    tag: "seq2_ftr_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      seq_squeaky_2M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_1M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_obj_neg:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_f1tenth:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_huawei:           {pos_ratio: 0.10, neg_ratio: 0.10}
+    val_pct: 0.15
+    seed: 42
+
+  exp20:
+    name: "seq3_ftr_s3"
+    init_from: "seq2_ftr_s3"
+    arm: "seq_ftr"
+    tag: "seq3_ftr_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      seq_FIM_outside:      {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_f1tenth:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_huawei:           {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_2M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_1M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_obj_neg:          {pos_ratio: 0.10, neg_ratio: 0.10}
+    val_pct: 0.15
+    seed: 42
+
+  exp21:
+    name: "seq4_ftr_s3"
+    init_from: "seq3_ftr_s3"
+    arm: "seq_ftr"
+    tag: "seq4_ftr_s3"
+    hyp: {epochs: 30, lr0: 0.0001, warmup_epochs: 0, patience: 30, seed: 3, save_period: 2}
+    datasets:
+      seq_icra:             {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_f1tenth:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_huawei:           {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_2M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_squeaky_1M:       {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_obj_neg:          {pos_ratio: 0.10, neg_ratio: 0.10}
+      seq_FIM_outside:      {pos_ratio: 0.10, neg_ratio: 0.10}
+    val_pct: 0.15
+    seed: 42
+
+
+  # --- joint: il riferimento sui quattro holdout ------------------------------
+
+
+  # IDEA: tutti e quattro i task insieme, da zero. Riempie la riga R* della
+  # matrice ed e' il termine dell'intransigence su OGNI task, holdout nuovi
+  # compresi - cosa che joint_w100 della tranche 2 non puo' fare.
+
+  exp22:
+    name: "seq_joint_s1"
+    model: 'yolo26n.pt'
+    arm: "seq_joint"
+    tag: "seq_joint_s1"
+    hyp: {epochs: 100, patience: 100, seed: 1, save_period: 2}
+    datasets:
+      seq_f1tenth:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_huawei:           {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_2M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_1M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_obj_neg:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_FIM_outside:      {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_icra:             {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp23:
+    name: "seq_joint_s2"
+    model: 'yolo26n.pt'
+    arm: "seq_joint"
+    tag: "seq_joint_s2"
+    hyp: {epochs: 100, patience: 100, seed: 2, save_period: 2}
+    datasets:
+      seq_f1tenth:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_huawei:           {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_2M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_1M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_obj_neg:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_FIM_outside:      {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_icra:             {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42
+
+  exp24:
+    name: "seq_joint_s3"
+    model: 'yolo26n.pt'
+    arm: "seq_joint"
+    tag: "seq_joint_s3"
+    hyp: {epochs: 100, patience: 100, seed: 3, save_period: 2}
+    datasets:
+      seq_f1tenth:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_huawei:           {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_2M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_squeaky_1M:       {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_obj_neg:          {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_FIM_outside:      {pos_ratio: 1.0, neg_ratio: 1.0}
+      seq_icra:             {pos_ratio: 1.0, neg_ratio: 1.0}
+    val_pct: 0.15
+    seed: 42

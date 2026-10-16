@@ -8,13 +8,13 @@ benchmarks:
     enabled: true
 
   benchmark2:
-    name: "forgetting_holdout"
-    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/forgetting_holdout"
+    name: "FIM_outside_holdout"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/FIM_outside/FIM_outside_holdout"
     type: "subfolders"
-    enabled: false
+    enabled: true
 
   benchmark3:
-    name: "generalization_holdout"
-    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/generalization_holdout"
+    name: "FIM_inside"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/FIM_inside"
     type: "subfolders"
-    enabled: false
+    enabled: true

@@ -1,0 +1,50 @@
+# tmp_benchmarks.yaml
+#
+# Benchmark per la campagna SEQUENZIALE: un holdout per ogni task della sequenza
+# (per riempire la matrice R dopo ogni passo) piu' FIM_inside come sonda di
+# generalizzazione fuori matrice.
+#
+# Il parser legge SOLO benchmarks.yaml. Per usare questo file:
+#   cp tmp_benchmarks.yaml benchmarks.yaml
+#
+# ATTENZIONE: f1tenth_holdout e squeaky_holdout sono immagini che le 42 run
+# della tranche 2 hanno VISTO in training. Con questo file attivo, results/
+# deve contenere solo run sequenziali - altrimenti benchmark.py valuterebbe
+# modelli su dati di training, e scriverebbe numeri contaminati nel ledger.
+#
+# f1tenth_holdout non ha negativi: la FAR li' e' indefinita. E' una sonda di
+# soli positivi (mAP, recall).
+
+benchmarks:
+  benchmark1:
+    name: "f1tenth_holdout"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/f1tenth_holdout"
+    type: "subfolders"
+    enabled: true
+
+  benchmark2:
+    name: "squeaky_holdout"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/squeaky_holdout"
+    type: "subfolders"
+    enabled: true
+
+  # identico a datasets/FIM_outside/FIM_outside_holdout
+  benchmark3:
+    name: "FIM_outside_holdout"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/FIM_outside/FIM_outside_holdout"
+    type: "subfolders"
+    enabled: true
+
+  # identico a datasets/icra_test_camera/icra_holdout
+  benchmark4:
+    name: "icra_holdout"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/icra_test_camera/icra_holdout"
+    type: "subfolders"
+    enabled: true
+
+  # mai allenato da nessun passo
+  benchmark5:
+    name: "FIM_inside"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/tmp_datasets/FIM_inside"
+    type: "subfolders"
+    enabled: true

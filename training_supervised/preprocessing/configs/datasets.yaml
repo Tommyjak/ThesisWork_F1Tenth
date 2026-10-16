@@ -12,16 +12,26 @@ datasets:
     type: "standard"
 
   dataset3:
-    name: "squeaky_17-04-26"
-    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/squeaky_17-04-26"
+    name: "squeaky_1Macchina"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/squeaky_17-04-26/squeaky_1Macchina"
     type: "subfolders"
 
   dataset4:
+    name: "squeaky_2Macchine"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/squeaky_17-04-26/squeaky_2Macchine"
+    type: "subfolders"
+
+  dataset5:
     name: "objects_negatives_15-05-26"
     root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/objects_negatives_15-05-26"
     type: "subfolders"
 
-  dataset5:
+  dataset6:
     name: "icra_base"
     root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/icra_test_camera/icra_base"
+    type: "subfolders"
+
+  dataset7:
+    name: "FIM_outside_base"
+    root: "/home/tm/Documents/universita/tirocinio_hipert/research/datasets/FIM_outside/FIM_outside_base"
     type: "subfolders"

@@ -1,7 +1,13 @@
+import os
 import yaml
 from pathlib import Path
 
-EXP_YAML_PATH = Path(__file__).resolve().parent / "experiments.yaml"
+# sovrascrivibile da ambiente, per far girare una campagna su config diverse
+# senza copiare sopra i file originali:
+#   EXP_YAML=tmp_experiments.yaml python train.py
+# Un nome relativo si risolve in questa cartella; senza la variabile resta
+# experiments.yaml, e tutto funziona come prima
+EXP_YAML_PATH = Path(__file__).resolve().parent / os.environ.get("EXP_YAML", "experiments.yaml")
 DEFAULT_MODEL = "yolo26n.pt"
 
 def load_experiments_yaml(experiments_yaml_path=EXP_YAML_PATH):
